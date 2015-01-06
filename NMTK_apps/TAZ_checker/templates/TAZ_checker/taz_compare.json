@@ -1,0 +1,185 @@
+
+{
+  "info":{
+    "text":"\n<P>This tool implements a framework for comparing TAZ files from two scenarios</P>\n",
+    "version":"0.1",
+    "name":"TAZ Data Compare"
+  },
+  "sample":{
+             "files": [
+                 {
+                   "namespace":"data",
+                   "checksum": "d54d92032df225edf8708677ee172c6ea55b4062",
+                   "uri": "/static/TAZ_checker/wfrc_sample.geojson",
+                   "content-type":"application/json"
+                 },
+                 {
+                   "namespace":"data2",
+                   "checksum": "8285fe5ea41196c93a6af0f6561e2b4ac5b4e321",
+                   "uri": "/static/TAZ_checker/wfrc_sample_alt.geojson",
+                   "content-type":"application/json"
+                 }
+            ],
+            "config": {
+			    "data": {
+			        "households": {
+			            "type": "property",
+			            "value": "TOTHH"
+			        },
+			        "population": {
+			            "type": "property",
+			            "value": "TOTPOP"
+			        }
+			    },
+			    "data2": {
+			        "households2": {
+			            "type": "property",
+			            "value": "TOTHH"
+			        },
+			        "population2": {
+			            "type": "property",
+			            "value": "TOTPOP"
+			        }
+			    },
+			    "results": {
+			        "chk_hh": {
+			            "type": "string",
+			            "value": "chk_hh"
+			        },
+			        "chk_pop": {
+			            "type": "string",
+			            "value": "chk_pop"
+			        }
+			    },
+			    "parameters": {
+			        "bintol_param": {
+			            "type": "number",
+			            "value": 1.0
+			        }
+			    },
+			    "thresholds": {
+			        "avginc_ratio_threshmin": {
+			            "type": "number",
+			            "value": 0.5
+			        }
+			    }
+			},
+            "description":"Sample Job using sample TAZ data"
+  },
+  "documentation":{
+    "links":[
+      {
+        "url":"https://www.fhwa.dot.gov/planning/tmip/publications/other_reports/validation_and_reasonableness_2010/ch03.cfm",
+        "title":"Travel Model Validation and Reasonableness Checking Manual - Second Edition"
+      }
+    ]
+  },
+  "output":[
+    {
+      "description":"You may override the default field name in which results from this tool are reported by entering a different name here.  The name you enter may be adjusted so it is not the same as any fields already in your input data.",
+      "elements":[
+        {
+          "description":"Households check result",
+          "default":"chk_hh",
+          "required":true,
+          "label":"Result Field",
+          "type":"string",
+          "name":"chk_hh"
+        },
+        {
+          "description":"Population check result",
+          "default":"chk_pop",
+          "required":true,
+          "label":"Result Field",
+          "type":"string",
+          "name":"chk_pop"
+        }
+      ],
+      "type":"ConfigurationPage",
+      "name":"results",
+      "namespace":"results",
+      "label":"Result Variable"
+    }        
+  ],
+  "input":[
+    {
+      "elements":[
+        {
+          "required":true,
+          "type":"string",
+          "name":"households",
+          "description":"Total households in TAZ"
+        },
+        {
+          "required":true,
+          "type":"string",
+          "name":"population",
+          "description":"Total population in TAZ"
+        }
+      ],
+      "description":"Specify inputs for base TAZ file",
+      "required":true,
+      "label":"Base Input File Fields",
+      "type":"File",
+      "primary": true,
+      "name":"data",
+      "namespace":"data"
+    },
+    {
+      "elements":[
+        {
+          "required":true,
+          "type":"string",
+          "name":"households2",
+          "description":"Total households in TAZ"
+        },
+        {
+          "required":true,
+          "type":"string",
+          "name":"population2",
+          "description":"Total population in TAZ"
+        }
+      ],
+      "description":"Specify inputs for alternate scenario TAZ file",
+      "required":true,
+      "label":"Alternate Input File Fields",
+      "type":"File",
+      "name":"data2",
+      "namespace":"data2"
+    },
+    {
+      "description":"These are the parameters required in calculation of consistency checks.",
+      "elements":[
+        {
+          "default":1.0,
+          "required":true,
+          "type":"number",
+          "name":"bintol_param",
+          "description":"Tolerance in error of socio-demographic attribute bin totals"
+        }
+      ],
+      "type":"ConfigurationPage",
+      "name":"parameters",
+      "namespace":"parameters",
+      "label":"Parameters",
+      "expanded":true
+    },
+    {
+      "description":"These are the thresholds which the input variables should meet.",
+      "elements":[
+        {
+          "default":0.5,
+          "required":true,
+          "type":"number",
+          "name":"avginc_ratio_threshmin",
+          "description":"Minimum ratio of TAZ average income to median HH income of region"
+        }
+      ],
+      "type":"ConfigurationPage",
+      "name":"thresholds",
+      "namespace":"thresholds",
+      "label":"Thresholds",
+      "expanded":true
+    }
+  ]
+}
