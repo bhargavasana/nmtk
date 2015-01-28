@@ -49,10 +49,11 @@ cd ..
 install_virtualenv
 source venv/Scripts/activate
 pip install -r ${WIN_DIR}/win-requirements.txt
+pip install wheel
 mkdir packages
 pushd packages
 start .
-URLS="https://pypi.python.org/pypi/lxml/3.2.3#downloads http://www.stickpeople.com/projects/python/win-psycopg/ http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal http://matplotlib.org/downloads.html http://www.lfd.uci.edu/~gohlke/pythonlibs/#pandas"
+URLS="https://pypi.python.org/pypi/lxml/3.2.3#downloads http://www.stickpeople.com/projects/python/win-psycopg/ http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal http://matplotlib.org/downloads.html"
 echo "Please download the packages from the following URLS into the open 'packages' window"
 for URL in $URLS; do
   echo $URL
@@ -60,6 +61,11 @@ for URL in $URLS; do
 done
 echo "Press enter once your downloads are complete, and moved to the directory"
 read
+for I in 1 2; do
+  for FILE in *.whl; do
+    pip install "$FILE"
+  done
+done
 # Numpy needs to be installed in order for matplotlib to succeed.  Here
 # we fudge it and just run through the installers twice - the first time
 # numpy might not be there (and matplotlib may fail to install), but it
