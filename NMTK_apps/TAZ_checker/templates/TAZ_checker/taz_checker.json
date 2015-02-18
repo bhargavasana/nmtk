@@ -3,21 +3,13 @@
   "info":{
     "text":"\n<P>This tool implements a consistency and validity checker for TAZ files</P>\n",
     "version":"0.1",
-<<<<<<< HEAD
-    "name":"TMIP TAZ Checker Beta"
-=======
     "name":"TMIP TAZ Checker"
->>>>>>> tazchk
   },
   "sample":{
              "files": [
                  {
                    "namespace":"data",
-<<<<<<< HEAD
-                   "checksum": "d54d92032df225edf8708677ee172c6ea55b4062",
-=======
                    "checksum": "d1e187b4d32f88774996c9da39963aff7f7c47d4",
->>>>>>> tazchk
                    "uri": "/static/TAZ_checker/wfrc_sample.geojson",
                    "content-type":"application/json"
                  }
