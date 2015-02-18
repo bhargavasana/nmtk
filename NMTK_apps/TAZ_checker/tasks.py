@@ -48,11 +48,8 @@ def performModel(input_files,
         else:
             logger.debug("Loaded config: %s", setup)
             file_iterator=ConfigIterator(input_files, file_namespace, setup)
-<<<<<<< HEAD
-            if subtool_name.lower()=='taz_compare':
-=======
+
             if subtool_name.lower()=='scn_compare':
->>>>>>> tazchk
                 file_iterator2=ConfigIterator(input_files, 'data2', setup)
     except:
         logger.exception('Failed to parse config file or data file.')
@@ -123,42 +120,17 @@ def performModel(input_files,
                 data_array['regchk_empwrk'] = checks.chkRange(np.array([np.sum(data_array['employment'])/np.sum(data_array['workers'])]),thresholds.get('empwrk_ratio_threshmin'),thresholds.get('empwrk_ratio_threshmax'))
                 data_array['regchk_wrkage'] = checks.chkRange(np.array([np.sum(data_array['workers'])]),0,np.sum(data_array['pop_age2']+data_array['pop_age3'])*regional_nonwrk_pct/100)
                 data_array['regchk_schenr'] = checks.chkRange(np.array([np.sum(data_array['enr_k_6']+data_array['enr_7_12'])]),0,np.sum(data_array['pop_age1'])*(1-regional_chu5_pct/100))
-<<<<<<< HEAD
-            elif subtool_name.lower()=='taz_compare':
-=======
 
                 result_cols = [setup['results'][col]['value'] for col in chkcols]
                 iface.addResult(file_iterator,result_cols,data_array,chkcols)
                 
             elif subtool_name.lower()=='scn_compare':
->>>>>>> tazchk
                 thresh_iterator=ConfigIterator(input_files, 'thresholds', setup)
                 if thresh_iterator.iterable:
                     raise Exception('Thresholds cannot be iterable')
                 else:
                     thresholds=thresh_iterator.data
 
-<<<<<<< HEAD
-                req_vars = ['households','population']
-                data_array = iface.toArray(file_iterator, req_vars)
-                dt = np.dtype([(var,'float') for var in req_vars])
-                data_array = np.array(data_array,dt)
-                req_vars = ['households2','population2']
-                data_array2 = iface.toArray(file_iterator2, req_vars)
-                dt = np.dtype([(var,'float') for var in req_vars])
-                data_array2 = np.array(data_array2,dt)
-                
-                chkcols = ['chk_hh','chk_pop']
-                for newcol in chkcols:
-                    data_array = addCol(data_array,newcol,0.0)
-                
-                data_array['chk_hh'] = (data_array2['households2']-data_array['households'])*100/data_array['households']
-                data_array['chk_pop'] = (data_array2['population2']-data_array['population'])*100/data_array['population']
-                
-            result_cols = [setup['results'][col]['value'] for col in chkcols]
-            iface.addResult(file_iterator,result_cols,data_array,chkcols)
-              
-=======
                 req_vars = ['tazid','households','population','vehicles']
                 data_array = iface.toArray(file_iterator, req_vars)
                 dt = np.dtype([(var,'float') for var in req_vars])
@@ -184,7 +156,6 @@ def performModel(input_files,
                 match_result_col = setup['data'][match_arr_col]['value']
                 iface.addMatchResult(file_iterator,result_cols,match_result_col,data_array,chkcols,match_arr_col)
           
->>>>>>> tazchk
         except Exception, e:
             # if anything goes wrong we'll send over a failure status.
             print e
@@ -207,8 +178,4 @@ def performModel(input_files,
         os.unlink(fileinfo[0])        
 
 def addCol(arr, col, factor):
-<<<<<<< HEAD
-    return recfuntions.append_fields(arr,col,np.ones(len(arr))*factor)
-=======
     return recfuntions.append_fields(arr,col,np.ones(len(arr))*factor,usemask=False)
->>>>>>> tazchk
