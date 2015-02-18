@@ -1,27 +1,31 @@
 
 {
   "info":{
-    "text":"\n<P>This tool implements a framework for comparing TAZ files from two scenarios</P>\n",
+    "text":"\n<P>This tool implements a process to compare TAZ files from two scenarios</P>\n",
     "version":"0.1",
-    "name":"TAZ Data Compare"
+    "name":"Scenario Comparison Tool"
   },
   "sample":{
              "files": [
                  {
                    "namespace":"data",
-                   "checksum": "d54d92032df225edf8708677ee172c6ea55b4062",
+                   "checksum": "d1e187b4d32f88774996c9da39963aff7f7c47d4",
                    "uri": "/static/TAZ_checker/wfrc_sample.geojson",
                    "content-type":"application/json"
                  },
                  {
                    "namespace":"data2",
-                   "checksum": "8285fe5ea41196c93a6af0f6561e2b4ac5b4e321",
+                   "checksum": "1dfcda42cd40c09c8800990708d6cc7fc6bfca6e",
                    "uri": "/static/TAZ_checker/wfrc_sample_alt.geojson",
                    "content-type":"application/json"
                  }
             ],
             "config": {
 			    "data": {
+							"tazid": {
+			            "type": "property",
+			            "value": "TAZID"
+			        },			    
 			        "households": {
 			            "type": "property",
 			            "value": "TOTHH"
@@ -29,9 +33,17 @@
 			        "population": {
 			            "type": "property",
 			            "value": "TOTPOP"
+			        },
+			        "vehicles": {
+			            "type": "property",
+			            "value": "TOTVEH"
 			        }
 			    },
 			    "data2": {
+			    		"tazid2": {
+			            "type": "property",
+			            "value": "TAZID"
+			        },
 			        "households2": {
 			            "type": "property",
 			            "value": "TOTHH"
@@ -39,16 +51,24 @@
 			        "population2": {
 			            "type": "property",
 			            "value": "TOTPOP"
+			        },
+			        "vehicles2": {
+			            "type": "property",
+			            "value": "TOTVEH"
 			        }
 			    },
 			    "results": {
-			        "chk_hh": {
+			        "pctchg_hh": {
 			            "type": "string",
-			            "value": "chk_hh"
+			            "value": "pctchg_hh"
 			        },
-			        "chk_pop": {
+			        "pctchg_pop": {
 			            "type": "string",
-			            "value": "chk_pop"
+			            "value": "pctchg_pop"
+			        },
+			        "pctchg_veh": {
+			            "type": "string",
+			            "value": "pctchg_veh"
 			        }
 			    },
 			    "parameters": {
@@ -58,9 +78,13 @@
 			        }
 			    },
 			    "thresholds": {
-			        "avginc_ratio_threshmin": {
+			        "pctchg_threshmin": {
 			            "type": "number",
-			            "value": 0.5
+			            "value": -50
+			        },
+			        "pctchg_threshmax": {
+			            "type": "number",
+			            "value": 50
 			        }
 			    }
 			},
@@ -79,20 +103,28 @@
       "description":"You may override the default field name in which results from this tool are reported by entering a different name here.  The name you enter may be adjusted so it is not the same as any fields already in your input data.",
       "elements":[
         {
-          "description":"Households check result",
-          "default":"chk_hh",
+          "description":"Households percent change",
+          "default":"pctchg_hh",
           "required":true,
           "label":"Result Field",
           "type":"string",
-          "name":"chk_hh"
+          "name":"pctchg_hh"
         },
         {
-          "description":"Population check result",
-          "default":"chk_pop",
+          "description":"Population percent change",
+          "default":"pctchg_pop",
           "required":true,
           "label":"Result Field",
           "type":"string",
-          "name":"chk_pop"
+          "name":"pctchg_pop"
+        },
+        {
+          "description":"Total vehicles percent change",
+          "default":"pctchg_veh",
+          "required":true,
+          "label":"Result Field",
+          "type":"string",
+          "name":"pctchg_veh"
         }
       ],
       "type":"ConfigurationPage",
@@ -107,6 +139,12 @@
         {
           "required":true,
           "type":"string",
+          "name":"tazid",
+          "description":"TAZ ID"
+        },
+        {
+          "required":true,
+          "type":"string",
           "name":"households",
           "description":"Total households in TAZ"
         },
@@ -115,6 +153,12 @@
           "type":"string",
           "name":"population",
           "description":"Total population in TAZ"
+        },
+        {
+          "required":true,
+          "type":"string",
+          "name":"vehicles",
+          "description":"Total vehicles in TAZ"
         }
       ],
       "description":"Specify inputs for base TAZ file",
@@ -130,6 +174,12 @@
         {
           "required":true,
           "type":"string",
+          "name":"tazid2",
+          "description":"TAZ ID"
+        },
+        {
+          "required":true,
+          "type":"string",
           "name":"households2",
           "description":"Total households in TAZ"
         },
@@ -138,6 +188,12 @@
           "type":"string",
           "name":"population2",
           "description":"Total population in TAZ"
+        },
+        {
+          "required":true,
+          "type":"string",
+          "name":"vehicles2",
+          "description":"Total vehicles in TAZ"
         }
       ],
       "description":"Specify inputs for alternate scenario TAZ file",
@@ -155,7 +211,7 @@
           "required":true,
           "type":"number",
           "name":"bintol_param",
-          "description":"Tolerance in error of socio-demographic attribute bin totals"
+          "description":"Tolerance in error"
         }
       ],
       "type":"ConfigurationPage",
@@ -168,11 +224,18 @@
       "description":"These are the thresholds which the input variables should meet.",
       "elements":[
         {
-          "default":0.5,
+          "default":-50,
           "required":true,
           "type":"number",
-          "name":"avginc_ratio_threshmin",
-          "description":"Minimum ratio of TAZ average income to median HH income of region"
+          "name":"pctchg_threshmin",
+          "description":"Minimum percent change between base and alternative TAZ attribute"
+        },
+        {
+          "default":50,
+          "required":true,
+          "type":"number",
+          "name":"pctchg_threshmax",
+          "description":"Maximum percent change between base and alternative TAZ attribute"
         }
       ],
       "type":"ConfigurationPage",

@@ -16,5 +16,8 @@ def chkRange(chk_array, minval, maxval):
     retval[chk_array>maxval] = 1
     return retval
 
+def pctChange(chk_array,basecol,altcol):
+    return (chk_array[altcol][chk_array[basecol]>0]-chk_array[basecol][chk_array[basecol]>0])*100/chk_array[basecol][chk_array[basecol]>0]
+
 
 
