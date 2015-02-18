@@ -1,8 +1,6 @@
-<<<<<<< HEAD
-=======
+
 import numpy
 import pandas as pd
->>>>>>> tazchk
 
 def recToArray(arr):
     return arr.view((float,len(arr.dtype.names)))
@@ -16,8 +14,6 @@ def updateRow(row, field, val):
 def addResult(fiter, fields, value_array, array_fields):
     [updateRow(outrow, field, row[arr_field]) for outrow,row in zip(fiter.data_parsed['features'],value_array) for field,arr_field in zip(fields,array_fields)]
 
-<<<<<<< HEAD
-=======
 #This function converts a pandas dataframe to an ndarray
 def df_to_ndarray(df):
     col_names = df.dtypes.index.values
@@ -39,7 +35,6 @@ def addMatchResult(fiter, fields, match_field, value_array, array_fields, match_
         outrow['properties'][match_field] = curr_taz
         for f1,f2 in zip(fields,array_fields):
             outrow['properties'][f1] = float(match_row[f2])
->>>>>>> tazchk
 
 
 
