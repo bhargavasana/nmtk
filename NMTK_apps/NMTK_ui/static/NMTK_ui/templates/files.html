@@ -1,4 +1,4 @@
-<IFRAME ng-hide="1" id="hidden_upload" name="hidden_upload" src="" onLoad="uploadDone()"
+<IFRAME ng-hide="1" id="hidden_upload" name="hidden_upload" title="Hidden upload" src="" onLoad="uploadDone()"
         style="width:0;height:0;border:0px solid #fff"></IFRAME>
 <script type="text/ng-template"  id="ie_upload.html">
 	<input type="file" ng-model="fileupload" name="file" /><br />
@@ -10,14 +10,15 @@
       <div class="col-md-12">
         <div class="widget stacked">
           <div ng-click="toggleDiv('nmtk_filehelp')" class="widget-header">
-            <i class="glyphicon glyphicon-info-sign"></i>
-            <h3>Files</h3>            
+            <span class="glyphicon glyphicon-info-sign"></span>
+            <h1>Files</h1>            
             <button type="button" class="btn btn-link pull-right btn-right" 
 	                    tooltip="Expand or collapse"
 	                    data-toggle="tooltip" data-placement="right" id="right" 
 	                    title="" data-original-title="Tooltip on right">
-					<i ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_filehelp'), 'glyphicon-chevron-down': isDivEnabled('nmtk_filehelp')}"
-		               class="navbar-right glyphicon" ></i>
+					<span ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_filehelp'), 'glyphicon-chevron-down': isDivEnabled('nmtk_filehelp')}"
+		               class="navbar-right glyphicon" ></span>
+					    <span class="sr-only" >Expand or collapse</span>
 		     </button>
           </div> <!-- /widget-header -->
           <div ng-show="isDivEnabled('nmtk_filehelp')" class="widget-content">
@@ -32,7 +33,7 @@
 	    DBF and Excel files.  If one of those tabular formats includes long/lat (or
 	    longitude/latitude) values, it can also be mapped.
 	    Common geographic vector formats are also supported for upload.  To upload a shapefile,
-	    put all of its compoonents in a single .zip archive.  The archive file will be unpacked
+	    put all of its components in a single .zip archive.  The archive file will be unpacked
 	    automatically and the shapefile loaded.
             </p>
             <p>
@@ -51,10 +52,10 @@
       <div class="col-md-12">
         <div ng-click="toggleDiv('nmtk_fileupload_panel')" class="widget stacked">
           <div class="widget-header">
-            <i class="glyphicon glyphicon-upload"></i>
-            <h3>Add New Files</h3>
-                        <i ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_fileupload_panel'), 'glyphicon-chevron-down': isDivEnabled('nmtk_fileupload_panel')}" 
-               class="navbar-right glyphicon ic-right"></i>
+            <span class="glyphicon glyphicon-upload"></span>
+            <h1>Add New Files</h1>
+                        <span ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_fileupload_panel'), 'glyphicon-chevron-down': isDivEnabled('nmtk_fileupload_panel')}" 
+               class="navbar-right glyphicon ic-right"></span>
             <button class="navbar-right btn btn-xs btn-primary ic-right" ng-click="switchView('classic_file_upload')" 
                     stop-event="click" 
                     ng-show="(browser_name!='Explorer') && (views.classic_file_upload)">Drag &amp; Drop Upload</button>
@@ -100,8 +101,8 @@
       <div class="col-md-12">
         <div class="widget stacked">
           <div class="widget-header">
-            <i class="glyphicon glyphicon-wrench"></i>
-            <h3>Data Files</h3>
+            <span class="glyphicon glyphicon-wrench"></span>
+            <h1>Data Files</h1>
           </div> <!-- /widget-header -->
           <div class="widget-content">
 			<section id="tables">

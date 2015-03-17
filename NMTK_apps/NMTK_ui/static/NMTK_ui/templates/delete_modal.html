@@ -11,7 +11,7 @@
         <div ng-show="jobs_in.length + jobs_out.length" class="col-md-12">
 	        <div ng-show="jobs_in" class="widget stacked">
 	          <div class="widget-header">
-	            <i class="glyphicon glyphicon-remove-circle"></i>
+	            <span class="glyphicon glyphicon-remove-circle"></span>
 	               <h3>Used as Job Input</h3>
 	          </div>
 	          <div class="widget-content">
@@ -20,6 +20,14 @@
 	            </p>
 	            
 	            <table class="table table-bordered table-striped table-highlight"> 
+				<caption>
+				 <strong>Table Caption</strong>
+				  <details>
+				   <summary>Summary</summary>
+				   <p>Description of table contents</p>
+				  </details>
+				</caption>
+				
 			      <thead>
 			        <tr>
 			          <th>Job Description</th>
@@ -37,7 +45,7 @@
 	        </div>
 	        <div ng-show="jobs_out" class="widget stacked">
 	          <div class="widget-header">
-	            <i class="glyphicon glyphicon-remove-circle"></i>
+	            <span class="glyphicon glyphicon-remove-circle"></span>
 	               <h3>Tied to Job Output</h3>
 	          </div>
 	          <div class="widget-content">
@@ -45,6 +53,14 @@
 	            </p>
 	            
 	            <table class="table table-bordered table-striped table-highlight"> 
+				<caption>
+				 <strong>Table Caption</strong>
+				  <details>
+				   <summary>Summary</summary>
+				   <p>Description of table contents</p>
+				  </details>
+				</caption>
+				
 			      <thead>
 			        <tr>
 			          <th>Job Description</th>

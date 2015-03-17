@@ -3,13 +3,13 @@
     Action <span class="caret"></span>
   </button>
   <ul class="dropdown-menu" role="menu">
-    <li><a ng-click="fileInfo(row.entity)"><i class="glyphicon glyphicon-info-sign"></i> File Details</a></li>
-    <li><a ng-click="downloadDatafile(row.entity)"><i class="glyphicon glyphicon-cloud-download"></i> Download Data</a></li>
-    <li><a ng-if="isComplete(row.entity) && !row.entity.result_field" ng-href="#/view_data/{{row.entity.id}}/"><i class="glyphicon glyphicon-eye-open"></i> View Data</a></li>
-    <li><a ng-if="isComplete(row.entity) && row.entity.result_field" ng-href="#/view_results/{{row.entity.id}}/"><i class="glyphicon glyphicon-eye-open"></i> View Results</a></li>
-    <li><a ng-if="row.entity.result_field" ng-click="openJobViewDialog(row.entity)"><i class="glyphicon glyphicon-eye-open"></i> View Job Details</a></li>
-    <li ng-if="false"><a ng-if="isComplete(row.entity)" ng-click="createJob(null, row.entity.resource_uri)"><i class="glyphicon glyphicon-cog"></i> Create Job</a></li>
+    <li><a href="javascript: void(0);" ng-click="fileInfo(row.entity)"><span class="glyphicon glyphicon-info-sign"></span> File Details</a></li>
+    <li><a href="javascript: void(0);" ng-click="downloadDatafile(row.entity)"><span class="glyphicon glyphicon-cloud-download"></span> Download Data</a></li>
+    <li><a ng-if="isComplete(row.entity) && !row.entity.result_field" ng-href="#/view_data/{{row.entity.id}}/"><span class="glyphicon glyphicon-eye-open"></span> View Data</a></li>
+    <li><a ng-if="isComplete(row.entity) && row.entity.result_field" ng-href="#/view_results/{{row.entity.id}}/"><span class="glyphicon glyphicon-eye-open"></span> View Results</a></li>
+    <li><a href="javascript: void(0);" ng-if="row.entity.result_field" ng-click="openJobViewDialog(row.entity)"><span class="glyphicon glyphicon-eye-open"></span> View Job Details</a></li>
+    <li ng-if="false"><a href="javascript: void(0);" ng-if="isComplete(row.entity)" ng-click="createJob(null, row.entity.resource_uri)"><span class="glyphicon glyphicon-cog"></span> Create Job</a></li>
     <li class="divider"></li>
-    <li><a class="" ng-click="removeFile('datafile',row.entity,row.entity.description,'Data File')"><i class="glyphicon glyphicon-trash"></i> Remove File</a></li>
+    <li><a href="javascript: void(0);" class="" ng-click="removeFile('datafile',row.entity,row.entity.description,'Data File')"><span class="glyphicon glyphicon-trash"></span> Remove File</a></li>
   </ul>
 </div>

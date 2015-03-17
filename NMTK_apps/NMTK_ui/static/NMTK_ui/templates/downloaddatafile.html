@@ -7,12 +7,20 @@
     <div class="row">
       <div class="col-md-12">  	
         <div class="control-group">
-          <label class="control-group" for="job">Choose your desired file format</label>
+          <span class="control-group"><strong>Choose your desired file format</strong></span>
           <div class="controls">
             <p class="help-block">Please click one of the links below to download your
             job results in the specified file format.</p>
             <br>
-            <a ng-if="isComplete(datafile)" ng-show="spatial" ng-href="{{download_url}}?format=json">GeoJSON Format</a><br>
+            <a ng-if="isComplete(datafile)" ng-show="spatial" ng-href="{{download_url}}?format=json">GeoJSON Format</a><br> 
+            <a ng-if="isComplete(datafile)" ng-show="spatial" ng-href="{{wms_url}}?SERVICE=wfs&REQUEST=getFeature&VERSION=1.1.0&typename=results&outputformat=shapefile">Shapefile (Zipped)</a><br ng-show="spatial">
+            <a ng-if="isComplete(datafile)" ng-show="spatial" ng-href="{{wms_url}}?SERVICE=wfs&REQUEST=getFeature&VERSION=1.1.0&typename=results&outputformat=csv">CSV (with WKT Geometry)</a><br ng-show="spatial">
+            <!-- <a ng-if="isComplete(datafile)" ng-show="spatial" ng-href="{{wms_url}}?SERVICE=wfs&REQUEST=getFeature&VERSION=1.1.0&typename=results&outputformat=kml">Google Earth KML</a><br ng-show="spatial"> -->
+
+            <!-- Currently KML/KMZ output is producing invalid coordinates.
+            <a ng-if="isComplete(datafile)" ng-show="spatial" ng-href="{{wms_url}}?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=results&FORMAT=kml&HEIGHT=256&WIDTH=256&SRS=EPSG%3A4326&BBOX=-180.0000,-90.0000,180.0000,90.0000">Google Earth KML</a><br ng-show="spatial">
+            <a ng-if="isComplete(datafile)" ng-show="spatial" ng-href="{{wms_url}}?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=results&FORMAT=kmz&HEIGHT=256&WIDTH=256&SRS=EPSG%3A4326&BBOX=-180.0000,-90.0000,180.0000,90.0000">Google Earth KMZ</a><br ng-show="spatial">
+            -->
             <a ng-if="isComplete(datafile)" ng-href="{{download_url}}?format=csv">Comma-Separated Values</a><br>   
             <a ng-if="isComplete(datafile)" ng-href="{{download_url}}?format=xls">Microsoft Excel (.xls)</a><br>
             <a ng-if="isComplete(datafile)" ng-hide="spatial" ng-href="{{download_url}}?format=json">JSON Format</a><br>

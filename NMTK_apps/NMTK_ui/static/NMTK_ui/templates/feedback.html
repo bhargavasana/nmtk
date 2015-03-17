@@ -20,16 +20,16 @@
           </p>
           <div class="control-group" ng-repeat="field in fields">
              <label class="control-group" for="{{field.field}}">{{field.display_name}}</label>
-             <div ng-switch on="field.type" "class="controls">
+             <div ng-switch on="field.type" class="controls">
                 <p class="help-block">{{field.help}}</p>
                 <input ng-switch-when="input" type="{{field.type}}" class="input" 
-                 name="{{field.field}}" id="{{field.field}}" ng-model="feedback[field.field]"></input>
+                 name="{{field.field}}" id="{{field.field}}" ng-model="feedback[field.field]">
                 
                 <select id="{{field.field}}" ng-switch-when="select" 
                         ng-model="feedback[field.field]" ng-options="o.value as o.label for o in field.values" >
                 
                 </select>
-                <textarea ng-switch-when="textarea" ng-model="feedback[field.field]"></textarea>
+                <textarea title="Feedback" ng-switch-when="textarea" ng-model="feedback[field.field]"></textarea>
              </div>
           </div>
           

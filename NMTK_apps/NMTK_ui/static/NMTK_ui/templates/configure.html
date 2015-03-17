@@ -4,14 +4,14 @@
      <div ng-if="config.type == 'File'" class="col-md-12" >
        <div class="widget stacked">
          <div ng-click="toggleSection(config.namespace)"  class="widget-header">
-           <i class="glyphicon glyphicon-edit"></i>
+           <span class="glyphicon glyphicon-edit"></span>
            <h3>{{config.label}}</h3>
             <button type="button" class="btn btn-link pull-right btn-right" 
 	                    tooltip="Expand or collapse"
 	                    data-toggle="tooltip" data-placement="top" 
 	                    title="Expand or collapse">
-					<i ng-class="{'glyphicon-chevron-right': !sections[config.namespace], 'glyphicon-chevron-down': sections[config.namespace]}"
-		               class="navbar-right glyphicon" ></i>
+					<span ng-class="{'glyphicon-chevron-right': !sections[config.namespace], 'glyphicon-chevron-down': sections[config.namespace]}"
+		               class="navbar-right glyphicon" ></span>
 		     </button>
            <button class="navbar-right btn btn-xs btn-primary ic-right" ng-show="job_data.status=='Configuration Pending' && config.elements.length > 0" 
                    ng-click="cloneConfig(config.namespace)" stop-event='click'>Copy from Another Job</button>
@@ -39,7 +39,7 @@
 			  </tr>
 			  </thead>
 			  <tbody ng-if="$parent.job_config_files[config.namespace]">
-			    <tr ng-repeat="property in config.elements" ng-hide="validation[config.namespace][property.name].hidden">
+			    <tr ng-repeat="property in config.elements" ng-hide="hideField(config.namespace, property)">
 			       <td >
 					 <select ng-if="$parent.job_config[config.namespace][property.name]['type'] == 'property'" 
                              ng-model="$parent.job_config[config.namespace][property.name]['value']" required
@@ -47,18 +47,35 @@
 							 ng-init="setFieldDefaultValue(config.namespace, property.name)"
 							 ng-disabled="disabled"
                              ng-options="o.value as o.label for o in file_fields[config.namespace]"></select>
-                     <input ng-if="$parent.job_config[config.namespace][property.name]['type'] != 'property' && ! validation[config.namespace][property.name]['choices']"  
+                     <input ng-if="$parent.job_config[config.namespace][property.name]['type'] != 'property' && ! validation[config.namespace][property.name]['choices'] && validation[config.namespace][property.name]['type']!='boolean'"  
                             size="10" type="text" ng-model="$parent.job_config[config.namespace][property.name]['value']" 
 							ng-disabled="disabled || validation[config.namespace][property.name].readonly" required 
 							ng-init="setFieldDefaultValue(config.namespace,property.name) && validateEntry(config.namespace, property.name)"
 							ng-change="validateEntry(config.namespace, property.name)"
                             dynamic-name="config.namespace + ':' + property.name"  ></input>
-					 <select ng-if="$parent.job_config[config.namespace][property.name]['type'] != 'property' && validation[config.namespace][property.name]['choices']"
+					 <select ng-if="$parent.job_config[config.namespace][property.name]['type'] != 'property' && validation[config.namespace][property.name]['choices'] && validation[config.namespace][property.name]['type']!='boolean'"
 							name="config.namespace + ':' + property.name"  required
 							ng-disabled="disabled  || validation[config.namespace][property.name].readonly" 
 							ng-init="setFieldDefaultValue(config.namespace, property.name)"
                             ng-model="$parent.job_config[config.namespace][property.name]['value']" 
  							ng-options="item.value as item.label for item in get_options(validation[config.namespace][property.name]['choices'])"></select>
+					<!-- The option when we have a boolean field (so on/off) -->
+					<span ng-if="$parent.job_config[config.namespace][property.name]['type'] != 'property' && validation[config.namespace][property.name]['type']=='boolean'">
+					<input type="radio" 
+							dynamic-name="config.namespace + ':' + property.name" ng-required="!$parent.job_config[config.namespace][property.name]['value']"
+							ng-disabled="disabled  || validation[config.namespace][property.name].readonly"
+							ng-init="setFieldDefaultValue(config.namespace,property.name)"
+                            ng-model="$parent.job_config[config.namespace][property.name]['value']" 
+							value="1"
+ 							ng-options="item.value as item.label for item in get_options(validation[config.namespace][property.name]['choices'])"></input> True<br />
+					<input type="radio"
+							dynamic-name="config.namespace + ':' + property.name" ng-required="!$parent.job_config[config.namespace][property.name]['value']"
+							ng-disabled="disabled  || validation[config.namespace][property.name].readonly"
+							ng-init="setFieldDefaultValue(config.namespace,property.name)"
+							value="0"
+                            ng-model="$parent.job_config[config.namespace][property.name]['value']" 
+ 							ng-options="item.value as item.label for item in get_options(validation[config.namespace][property.name]['choices'])"></input> False
+					</span>
 			         <p class="help-block error" ng-show="(submit_attempted || job_config_form[config.namespace+':'+property.name].$dirty) && job_config_form[config.namespace+':'+property.name].$invalid" ng-bind="validation[config.namespace][property.name]['error']"></p>
 			       </td>
                    <td>
@@ -86,14 +103,14 @@
      <div ng-if="config.type == 'ConfigurationPage'" class="col-md-12" >
        <div class="widget stacked">
          <div ng-click="toggleSection(config.namespace)"  class="widget-header">
-           <i class="glyphicon glyphicon-edit"></i>
+           <span class="glyphicon glyphicon-edit"></span>
            <h3>{{config.label}}</h3>
 		   <button type="button" class="btn btn-link pull-right btn-right" 
 	                    tooltip="Expand or collapse"
 	                    data-toggle="tooltip" data-placement="top"
 	                    title="Expand or collapse" >
-					<i ng-class="{'glyphicon-chevron-right': !sections[config.namespace], 'glyphicon-chevron-down': sections[config.namespace]}"
-		               class="navbar-right glyphicon" ></i>
+					<span ng-class="{'glyphicon-chevron-right': !sections[config.namespace], 'glyphicon-chevron-down': sections[config.namespace]}"
+		               class="navbar-right glyphicon" ></span>
 		     </button>
 			<button class="navbar-right btn btn-xs btn-primary ic-right" ng-show="job_data.status=='Configuration Pending' && config.elements.length > 0" 
                    ng-click="cloneConfig(config.namespace)" stop-event='click'>Copy from Another Job</button>
@@ -112,19 +129,36 @@
 			  <tbody >
 			     <tr ng-repeat="property in config.elements" ng-hide="validation[config.namespace][property.name].hidden">
 			       <td>
-			         <input ng-if="!validation[config.namespace][property.name]['choices']" 
+			         <input ng-if="!validation[config.namespace][property.name]['choices'] && validation[config.namespace][property.name]['type'] != 'boolean'" 
 							type="text" ng-model="$parent.job_config[config.namespace][property.name]['value']" 
 							ng-disabled="disabled  || validation[config.namespace][property.name].readonly"
 							ng-change="validateEntry(config.namespace, property.name)"
 							ng-init="setFieldDefaultValue(config.namespace,property.name) && validateEntry(config.namespace, property.name)"
 			                dynamic-name="config.namespace + ':' + property.name"  required>
-					 <select ng-if="validation[config.namespace][property.name]['choices']"
+					<!-- The option when we have a set of choices to choose from --> 
+					<select ng-if="validation[config.namespace][property.name]['choices'] && validation[config.namespace][property.name]['type'] != 'boolean'"
 							dynamic-name="config.namespace + ':' + property.name"  required
 							ng-disabled="disabled  || validation[config.namespace][property.name].readonly"
 							ng-init="setFieldDefaultValue(config.namespace,property.name)"
                             ng-model="$parent.job_config[config.namespace][property.name]['value']" 
  							ng-options="item.value as item.label for item in get_options(validation[config.namespace][property.name]['choices'])"></select>
-			         <span ng-repeat="error in errors[config.namespace][property.name]" class="alert-error" ng-show="error">{{error}}</span>
+					<!-- The option when we have a boolean field (so on/off) -->
+					<span ng-if="validation[config.namespace][property.name]['type']=='boolean'">
+					<input type="radio" 
+							dynamic-name="config.namespace + ':' + property.name" ng-required="!$parent.job_config[config.namespace][property.name]['value']"
+							ng-disabled="disabled  || validation[config.namespace][property.name].readonly"
+							ng-init="setFieldDefaultValue(config.namespace,property.name)"
+                            ng-model="$parent.job_config[config.namespace][property.name]['value']" 
+							value="1"
+ 							ng-options="item.value as item.label for item in get_options(validation[config.namespace][property.name]['choices'])"></input> True<br />
+					<input type="radio"
+							dynamic-name="config.namespace + ':' + property.name" ng-required="!$parent.job_config[config.namespace][property.name]['value']"
+							ng-disabled="disabled  || validation[config.namespace][property.name].readonly"
+							ng-init="setFieldDefaultValue(config.namespace,property.name)"
+							value="0"
+                            ng-model="$parent.job_config[config.namespace][property.name]['value']" 
+ 							ng-options="item.value as item.label for item in get_options(validation[config.namespace][property.name]['choices'])"></input> False
+					</span>			         <span ng-repeat="error in errors[config.namespace][property.name]" class="alert-error" ng-show="error">{{error}}</span>
 			         <p class="help-block error" ng-show="(submit_attempted || job_config_form[config.namespace+':'+property.name].$dirty) && job_config_form[config.namespace+':'+property.name].$invalid">{{validation[config.namespace][property.name]['error']}}</p>
 				   </td>
 			       <td><label for="{{config.namespace}}:{{property.name}}">{{property.description}}</label></td>
@@ -149,6 +183,8 @@
             <button ng-show="disabled" ng-click="closeConfig()" class="navbar-right btn btn-xs btn-primary ic-right">Close</button>
             <button ng-hide="disabled" ng-click="closeConfig()" class="navbar-right btn btn-xs ic-right">Cancel</button>
             <button ng-hide="disabled" ng-click="submit_job()"  ng-class="{'btn-success': job_config_form.$valid, 'btn-warning': job_config_form.$invalid }"class="btn navbar-right btn-xs ic-right">Submit Job</button>
+            <button ng-hide="disabled" ng-click="submit_job(true)" class="btn navbar-right btn-xs ic-right">Save Job</button>
+            
           </div><br/>
         </div>
       </div>
@@ -157,14 +193,15 @@
      <div class="col-md-12">
         <div class="widget stacked">
           <div ng-click="toggleDiv('nmtk_configjob')" class="widget-header">
-            <i class="glyphicon glyphicon-info-sign"></i>
-            <h3>Configure a Job</h3>
+            <span class="glyphicon glyphicon-info-sign"></span>
+            <h1>Configure a Job</h1>
             <button type="button" class="btn btn-link pull-right btn-right" 
 	                    tooltip="Expand or collapse"
 	                    data-toggle="tooltip" data-placement="top" 
 	                    title="Expand or collapse">
-					<i ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_configjob'), 'glyphicon-chevron-down': isDivEnabled('nmtk_configjob')}"
-		               class="navbar-right glyphicon" ></i>
+					<span ng-class="{'glyphicon-chevron-right': !isDifvEnabled('nmtk_configjob'), 'glyphicon-chevron-down': isDivEnabled('nmtk_configjob')}"
+		               class="navbar-right glyphicon" ></span>
+					    <span class="sr-only" >Expand or collapse</span>
 		     </button>   
             <button class="navbar-right btn btn-xs btn-primary ic-right" ng-show="disabled" 
                    ng-click="createJob(tool_data.resource_uri,job_config, null, job_config_files)" stop-event='click'>Clone Job</button>      
@@ -220,6 +257,7 @@
             <button ng-show="disabled" ng-click="closeConfig()" class="btn btn-primary">Close</button>
             <button ng-hide="disabled" ng-click="closeConfig()" class="btn">Cancel</button>
             <button ng-hide="disabled" ng-click="submit_job()"  ng-class="{'btn-success': job_config_form.$valid, 'btn-warning': job_config_form.$invalid }"class="btn">Submit Job</button>
+            <button ng-hide="disabled" ng-click="submit_job(true)"  class="btn">Save Job</button>
           </div>
         </div>
       </div>

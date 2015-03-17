@@ -13,12 +13,12 @@ class ToolConfigValidator(object):
        self.tool_config=tool_config
        self.errors=None
        
-    def genToolConfig(self):
+    def genToolConfig(self, force=False):
         '''
-        The validation process "fills in" empy spaces with hidden and/or default
+        The validation process "fills in" empty spaces with hidden and/or default
         settings, here we return it.
         '''
-        if not self.is_valid():
+        if not (force or self.is_valid()):
             return None
         if not hasattr(self,'_tool_config'):
             self._tool_config=self.tool_config
@@ -151,13 +151,14 @@ class ToolConfigValidator(object):
                         
         
     
-    def genJobFiles(self):
+    def genJobFiles(self, force=False):
         '''
         Here we make a list of 
         '''
         if not hasattr(self, '_job_files'):
             self._job_files=[]
-            if self.is_valid():
+            if force or self.is_valid():
+                logger.debug('File config parsed is %s', self.file_config_parsed)
                 for namespace, datafile in self.file_config_parsed.iteritems():
                     self._job_files.append(models.JobFile(job=self.job,
                                                           datafile=datafile,

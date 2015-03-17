@@ -689,7 +689,7 @@ h6 {
   border-top-right-radius: 4px;
   -webkit-background-clip: padding-box;
 }
-.widget .widget-header h3 {
+.widget .widget-header h3, .widget .widget-header h1 {
   top: 2px;
   position: relative;
   left: 10px;
@@ -1606,6 +1606,10 @@ color: #000 !important;
 }
 .ic-right {
 	margin-right: 13px;
+	margin-top: 10px;
+}
+.ic-left {
+	margin-left: 13px;
 	margin-top: 10px;
 }
 .btn-right {

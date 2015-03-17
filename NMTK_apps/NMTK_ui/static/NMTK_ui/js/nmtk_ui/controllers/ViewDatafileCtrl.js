@@ -78,6 +78,7 @@ define(['angular', 'underscore','leaflet',
 				$timeout(function () { getJobInfo($routeParams.id); }, 0);
 			}
 			
+			
 			$log.debug('Parameters are ', $routeParams);
 			
 			// Simple function to return true or false depending on whether
@@ -196,6 +197,7 @@ define(['angular', 'underscore','leaflet',
 							return true;
 						}
 					});
+	                $scope.current_datafile_id = $scope.datafile_api.id
 					if (_.isUndefined($scope.datafile_api)) {
 						$scope.$parent.preview_datafile_api=undefined;
 						$scope.$parent.preview_job_api=undefined;
@@ -233,8 +235,8 @@ define(['angular', 'underscore','leaflet',
 			 * Note: This relies on leaflet being available...
 			 */
 			function getBounds(bbox) {
-				var southWest = new L.LatLng(bbox[2], bbox[0]);
-				var northEast = new L.LatLng(bbox[3], bbox[1]);	
+				var southWest = new L.LatLng(bbox[1], bbox[0]);
+				var northEast = new L.LatLng(bbox[3], bbox[2]);	
 				return L.latLngBounds(southWest, northEast);
 			}
 			
@@ -442,6 +444,17 @@ define(['angular', 'underscore','leaflet',
 				updateMapComponents();
 			});
 			
+			$scope.changeJobFile=function() {
+				// Change the path when the job file is changed
+				$location.path("view_results/"+$scope.current_datafile_id);
+			};
+			
+			$scope.$watch('job_id', function (newVal, oldVal){
+				$scope.$parent.result_field=newVal;
+				updateMapComponents();
+			});
+			
+			
 			$scope.$watch('preferences.config.ramp', function (newVal, oldVal){
 				updateMapComponents();
 			});
@@ -622,11 +635,47 @@ define(['angular', 'underscore','leaflet',
 										                         attribution: '© OpenStreetMap contributors',
 										                         continuousWorld: true
 										                      }
-										                     }
+										                     },
+								                       blank: { name: 'Blank Base Map',
+									                            type: 'xyz',
+									                            url: 'http://downloads2.esri.com/support/TechArticles/blank256.png',
+									                            layerOptions: {
+									                               continuousWorld: true
+									                            }
+									                          }
 										        	 },
 									   'overlays': { }
 					        }
 					        
+			}
+			
+			var getOtherJobResults=function () {
+				/*
+				 * Here we need to get the results entry for this datafile - since
+				 * that's where we get the job id.  Once we have the job id we 
+				 * can use it to get all the results files for the job in question
+				 * then we can use this to populate the list of datafiles that belong
+				 * to this job.
+				 */
+				Restangular.all('job_results').getList({'datafile': $scope.datafile_api.id}).then(function(job_result_datafile) {
+					if (job_result_datafile.length > 0) {
+						var job_id=job_result_datafile[0].job.split('/').reverse()[1]
+						$scope.other_datafiles=[];
+						Restangular.all('job_results').getList({'job': job_id}).then(function (job_results) {
+							// Get the ids of the datafiles that go with this job
+							var datafile_ids=_.map(job_results, function (job_result) { return parseInt(job_result.datafile.split('/').reverse()[1]) });
+							// Get all the datafiles (since we already have that in browser cache)
+							// and grab those datafiles that are in the list of job files.
+							$scope.rest['datafile'].then(function (datafiles) {
+								_.each(datafiles, function (datafile) {
+									if (_.contains(datafile_ids, datafile.id)) {
+										$scope.other_datafiles.push(datafile);
+									}
+								});
+							});
+						});
+					}
+				});
 			}
 			
 			// Get the information about the input file - used to determine if this
@@ -641,6 +690,7 @@ define(['angular', 'underscore','leaflet',
 				}
 				if ($scope.datafile_api.result_field) {
 					$scope.$parent.data_file_tab_name="Results";
+					getOtherJobResults()
 				} else {
 					$scope.$parent.data_file_tab_name="Data";
 				}

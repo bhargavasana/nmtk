@@ -168,17 +168,17 @@ INSTALLED_APPS = (
     'kombu.transport.django',
     )
 
-
+TASTYPIE_DEFAULT_FORMATS = ['json',]
 
 if TOOL_SERVER:
     INSTALLED_APPS = INSTALLED_APPS + ('NMTK_tools', # An app used to generate a list of tools.
                                        ) + NMTK_TOOL_APPS
 if NMTK_SERVER:
-    INSTALLED_APPS = INSTALLED_APPS + ('django.contrib.auth',        
-                                       'django.contrib.admin',
+    INSTALLED_APPS = INSTALLED_APPS + ('django.contrib.auth',
                                        'registration',
                                        'widget_tweaks',
                                        'NMTK_server', # The NMTK Server
+                                       'django.contrib.admin',
                                        'NMTK_ui', # the UI components for NMTK server
                                        'tastypie',
                                        )

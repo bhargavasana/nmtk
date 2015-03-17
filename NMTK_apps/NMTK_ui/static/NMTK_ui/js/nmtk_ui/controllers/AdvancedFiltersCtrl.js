@@ -100,6 +100,7 @@ define(['underscore'], function (_) {
 				 */
 				$scope.filters.push($scope.selected);
 				$scope.selected={};
+				$scope.attributes={};
 			}
 			
 			$scope.removeFilter=function (input_filter) {
@@ -133,10 +134,9 @@ define(['underscore'], function (_) {
 						              displayName: 'Field'}
 						          , { field: 'criteria',
 						              cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()"><span ng-cell-text>{{lookupName(row.entity.criteria)}}</span></div>',
-						              width: 200,
+						              width: 150,
 						              displayName: 'Criteria'}
 						          , { field: 'filter_value',
-						        	  width: 150,
 						        	  displayName: 'Value'}
 						          , { displayName: 'Actions',
 						              cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()"><span ng-cell-text><button stop-event="click" class="btn btn-xs btn-danger pull-right" ng-click="removeFilter(row.entity)"><i class="glyphicon glyphicon-remove"></i></button></span></div>'}

@@ -2,7 +2,7 @@
 MAP
   NAME Results_WMS
   UNITS dd
-#  EXTENT -8200000 4990000 -7800000 6050000
+  EXTENT {{datafile.bbox.0}} {{datafile.bbox.1}} {{datafile.bbox.2}} {{datafile.bbox.3}}
   STATUS ON
   SIZE 512 512
   IMAGECOLOR 255 255 255
@@ -25,6 +25,67 @@ MAP
     FORMATOPTION "FILE={{mapserver_template}}"
     MIMETYPE "application/json"
   END
+  
+  OUTPUTFORMAT
+    NAME "json"
+    DRIVER "TEMPLATE"
+    FORMATOPTION "FILE={{mapserver_template}}"
+    MIMETYPE "application/json"
+  END
+  
+  OUTPUTFORMAT
+    NAME "csv"
+    DRIVER "OGR/CSV"
+    MIMETYPE "text/csv"
+    FORMATOPTION "LCO:GEOMETRY=AS_WKT"
+    FORMATOPTION "STORAGE=memory"
+    FORMATOPTION "FORM=simple"
+    FORMATOPTION "FILENAME={{datafile.pk}}_nmtk.csv"
+  END
+  
+  #OUTPUTFORMAT
+  #  NAME "kml"
+  #  DRIVER "OGR/LIBKML"
+  #  MIMETYPE "application/vnd.google-earth.kml+xml"
+  #  FORMATOPTION "STORAGE=memory"
+  #  FORMATOPTION "FORM=simple"
+  #  FORMATOPTION "FILENAME={{datafile.pk}}_nmtk.kml"
+  #END
+
+  OUTPUTFORMAT
+    NAME "gml"
+    DRIVER "OGR/GML"
+    FORMATOPTION "STORAGE=filesystem"
+    FORMATOPTION "FORM=simple"
+    FORMATOPTION "FILENAME={{datafile.pk}}_nmtk.gml"
+  END
+
+  OUTPUTFORMAT
+    NAME "shapefile"
+    DRIVER "OGR/ESRI Shapefile"
+    FORMATOPTION "STORAGE=memory"
+    FORMATOPTION "FORM=zip"
+    FORMATOPTION "FILENAME={{datafile.pk}}_nmtk.zip"
+  END
+
+#  OUTPUTFORMAT
+#    NAME kml
+#    DRIVER "KML"
+#    MIMETYPE "application/vnd.google-earth.kml+xml"
+#    IMAGEMODE RGB
+#    EXTENSION "kml"
+#    FORMATOPTION "maxfeaturestodraw=10000"
+#    FORMATOPTION 'ATTACHMENT={{datafile.pk}}_nmtk.kml'  #name of kml file returned
+#  END
+
+#  OUTPUTFORMAT
+#    NAME kmz
+#    DRIVER "KMZ"
+#    MIMETYPE "application/vnd.google-earth.kmz"
+#    IMAGEMODE RGB
+#    EXTENSION "kmz"
+#    FORMATOPTION 'ATTACHMENT={{datafile.pk}}_nmtk.kmz'  #name of kml file returned
+#  END
 
   PROJECTION
    "init=epsg:4326"
@@ -33,12 +94,13 @@ MAP
   WEB
     IMAGEPATH "/tmp/"
     IMAGEURL "/tmp/"
+    TEMPPATH "/tmp/"
     LOG "/tmp/mapserv.log"
 
     METADATA
       wms_feature_info_mime_type "application/json"
       ows_feature_info_mime_type "application/json"
-      wms_include_items "application/json"
+      "wfs_getfeature_formatlist" "kmz,kml,shapefile,csv,gml"
       "wms_enable_request" "*"
       "ows_enable_request" "*"
       "wms_include_items" "text/html"
@@ -81,7 +143,7 @@ MAP
     NAME "results"
     {% include "NMTK_server/mapfile_conninfo.map" %}
 #    DATA 'SELECT nmtk_geometry,* FROM "{{datafile.pk}}_results"'
-    TYPE LINE
+    TYPE {{geom_type}}
 #    STATUS ON
     DUMP TRUE
     PROJECTION
@@ -96,7 +158,8 @@ MAP
       WMS_ABSTRACT "Results from NMTK Tool"
       WMS_SRS "EPSG:4326"
       WMS_GROUP_TITLE "Results"
-      GML_INCLUDE_ITEMS "nmtk_feature_id"
+      "gml_include_items" "all"
+      "gml_types" "auto"
     END
     
     
@@ -108,7 +171,9 @@ MAP
       {% elif color.type == 'values' %}
       NAME "{{color.value}}"
         {% if color.numeric %}
-          EXPRESSION ([{{result_field}}] = {{color.value}})  
+          EXPRESSION ([{{result_field}}] = {{color.value}})
+        {% elif not color.value %}
+          EXPRESSION ("[{{result_field}}]" = "") 
         {% else %}
           EXPRESSION ("[{{result_field}}]" = "{{color.value}}")  
         {% endif %}
@@ -137,7 +202,7 @@ MAP
         COLOR {{unmatched_color.rgb.0}} {{unmatched_color.rgb.1}} {{unmatched_color.rgb.2}}
         OPACITY {{unmatched_color.opacity}}
 	    {% if geom_type == 'point' %}
-	   	  OUTLINECOLOR 0 0 0
+	      OUTLINECOLOR 0 0 0
 	      SYMBOL "circle"
 	    {% elif geom_type != 'line' %}
 	    	OUTLINECOLOR 0 0 0
@@ -148,7 +213,6 @@ MAP
       END # END STYLE
     END
     {% endif %}
-
   END
 
   LAYER
@@ -157,7 +221,7 @@ MAP
     VALIDATION
       "ids" "[0-9,]+"
     END
-    TYPE LINE
+    TYPE {{geom_type}}
 #    STATUS ON
     DUMP TRUE
     PROJECTION
@@ -168,11 +232,12 @@ MAP
       NAME "Selected Results"
       STYLE
         COLOR 0 0 0
-	    {% if geom_type == 'point' %}
-	   	  OUTLINECOLOR 0 0 0
+  	    {% if geom_type == 'point' %}
+	      OUTLINECOLOR 0 0 0
 	      SYMBOL "circle"
 	    {% elif geom_type != 'line' %}
 	    	OUTLINECOLOR 0 0 0
+	    	ANTIALIAS TRUE
 	    {% else %}
 	      WIDTH 3
 	    {% endif %}
@@ -189,13 +254,13 @@ MAP
     END
   END
   
-   LAYER
+  LAYER
     NAME "highlight_selected"
 	{% include "NMTK_server/mapfile_highlight_conninfo.map" %}
     VALIDATION
       "ids" "[0-9,]+"
     END
-    TYPE LINE
+    TYPE {{geom_type}}
 #    STATUS ON
     DUMP TRUE
     PROJECTION
@@ -206,11 +271,11 @@ MAP
       NAME "Selected Results"
       STYLE
         COLOR 160 160 160
-        {% if geom_type == 'point' %}
-	   	  OUTLINECOLOR 0 0 0
+  	    {% if geom_type == 'point' %}
+	      OUTLINECOLOR 0 0 0
 	      SYMBOL "circle"
 	    {% elif geom_type != 'line' %}
-	    	OUTLINECOLOR 0 0 0
+	      OUTLINECOLOR 0 0 0
 	    {% else %}
 	      WIDTH 3
 	    {% endif %}

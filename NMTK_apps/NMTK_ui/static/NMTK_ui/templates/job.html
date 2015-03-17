@@ -3,14 +3,15 @@
       <div class="col-md-12">
         <div class="widget stacked">
           <div ng-click="toggleDiv('nmtk_jobs')" class="widget-header">
-            <i class="glyphicon glyphicon-info-sign"></i>
-            <h3>Jobs</h3>            
+            <span class="glyphicon glyphicon-info-sign"></span>
+            <h1>Jobs</h1>            
             <button type="button" class="btn btn-link pull-right btn-right" 
 	                    tooltip="Expand or collapse"
 	                    data-toggle="tooltip" data-placement="right" id="right" 
 	                    title="" data-original-title="Tooltip on right">
-					<i ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_jobs'), 'glyphicon-chevron-down': isDivEnabled('nmtk_jobs')}"
-		               class="navbar-right glyphicon" ></i>
+					<span ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_jobs'), 'glyphicon-chevron-down': isDivEnabled('nmtk_jobs')}"
+		               class="navbar-right glyphicon" ></span>
+					    <span class="sr-only" >Expand or collapse</span>
 		     </button>          
           </div> <!-- /widget-header -->
           <div ng-show="isDivEnabled('nmtk_jobs')" class="widget-content">
@@ -33,10 +34,10 @@
       <div class="col-md-12">
         <div class="widget stacked">
           <div ng-click="toggleDiv('nmtk_view_jobs')"  class="widget-header">
-            <i class="glyphicon glyphicon-road"></i>
-            <h3>Current Jobs</h3>
-            <i ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_view_jobs'), 'glyphicon-chevron-down': isDivEnabled('nmtk_view_jobs')}" 
-               class="navbar-right glyphicon ic-right"></i>  
+            <span class="glyphicon glyphicon-road"></span>
+            <h1>Current Jobs</h1>
+            <span ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_view_jobs'), 'glyphicon-chevron-down': isDivEnabled('nmtk_view_jobs')}" 
+               class="navbar-right glyphicon ic-right"></span>  
             <button class="navbar-right btn btn-xs btn-primary ic-right" ng-click="createJob()" stop-event="click">Create a New Job</button>
                
           </div> <!-- /widget-header -->

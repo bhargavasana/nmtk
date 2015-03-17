@@ -21,11 +21,14 @@ v1_api.register(api.FeedbackResource())
 v1_api.register(api.UserPreference())
 v1_api.register(api.ToolSampleFileResource())
 v1_api.register(api.MapColorStyleResource())
+v1_api.register(api.PageNameResource())
+v1_api.register(api.PageContentResource())
     
 
 urlpatterns = patterns('',
    url('^ui/$', 'NMTK_server.views.nmtk_ui', {}, name='nmtk_server_nmtk_ui'),
    url('^$', 'NMTK_server.views.nmtk_index', {}, name='nmtk_server_nmtk_index'),
+   url('^terms_of_service/$', 'NMTK_server.views.terms_of_service', {}, name='terms_of_service'),
    url('^tools/result$', 'NMTK_server.views.processResults', {}, name='processSuccessResults'),
    url('^tools/update$', 'NMTK_server.views.updateStatus', {}, name='updateStatus'),
 #   url('^submit-job-to-tool$', 'NMTK_server.views.configureJob', {}, name='configureJob'),

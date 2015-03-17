@@ -2,12 +2,15 @@ from osgeo import ogr, osr
 import logging
 import collections
 import datetime
+from dateutil.parser import parse
 from BaseDataLoader import *
+from loaders import FormatException
 
 logger=logging.getLogger(__name__)
 
 class OGRLoader(BaseDataLoader):
     name='OGR'
+    
     types={ogr.wkbPoint: 'POINT',
            ogr.wkbGeometryCollection: 'GEOMETRYCOLLECTION',
            ogr.wkbLineString: 'LINESTRING',
@@ -27,18 +30,58 @@ class OGRLoader(BaseDataLoader):
         a set of tuples that include a field dict and a geometry as WKT
         '''
         self._srid=kwargs.pop('srid',None)
+        self._dimensions=kwargs.pop('dimensions',2)
+        self.datefields={}
         super(OGRLoader, self).__init__(*args, **kwargs)
         for fn in self.filelist:
             self.ogr_obj=ogr.Open(fn)
             try:
                 self.data
             except:
+                logger.exception('Failed to open file %s', fn)
                 self.ogr_obj=None
             if self.ogr_obj is not None:
                 self.spatial=True
                 self.format=self.ogr_obj.GetDriver().name
+                logger.debug('The format of the file is %s', self.format)
                 self.filename=fn
                 break
+    
+    
+    @property
+    def dimensions(self):
+        return self._dimensions
+    
+    def determineGeometryType(self, layer):
+        '''
+        In the case of a KML/KMZ file, we need to iterate over the data to determine
+        the appropriate geometry type to use.
+        '''
+        if (not hasattr(self,'_determineGeometryType')):
+            self._determineGeometryType=ogr.wkbPoint
+            geom_types=set()
+            while True:
+                feat=layer.GetNextFeature()
+                if not feat: break
+                try:
+                    geom=feat.geometry()
+                    if not geom:
+                        logger.debug('Skipping apparent null geometry!')
+                        continue
+                    # Get the dimensions of the geometry.
+                    self._dimensions=max(geom.GetCoordinateDimension(), self._dimensions)
+                    geom_types.add(geom.GetGeometryName())
+                except Exception, e:
+                    logger.exception('Failed to get geometry type when iterating over data during ingest')
+            layer.ResetReading()
+            geom_types_string=' '.join(geom_types)
+            if 'POINT' in geom_types_string:
+                self._determineGeometryType=ogr.wkbPoint
+            elif 'LINE' in geom_types_string:
+                self._determineGeometryType=ogr.wkbLine
+            elif 'POLY' in geom_types_string:
+                self._determineGeometryType=ogr.wkbPolygon
+        return self._determineGeometryType
     
     def __iter__(self):
         self.data.layer.ResetReading()
@@ -57,9 +100,24 @@ class OGRLoader(BaseDataLoader):
         else:
             feature=self.geomTransform(feature)
             data=dict((field, getattr(feature, field)) for field in self.fields())
-            # Try to use a column name of geometry, but in the case that 
-            # is already in use, choose another one numbered from geometry_1-10
-            wkt=feature.geometry().ExportToWkt()
+            # It seems that sometimes OGR is returning a non-valid (for django) date string
+            # rather than a date/datetime/time instance.  Here we check if that is the case,
+            # and if it is then we will simply use dateutil's parser to parse the value
+            # if that fails, then we just proceed and hope for the best..
+            for field,type in self.datefields.iteritems():
+                if not isinstance(data[field], (datetime.datetime, datetime.date, datetime.time)):
+                    try:
+                        if data[field]:
+                            v=parse(data[field])
+                            data[field]=v
+                    except: 
+                        logger.exception('Failed to parse field %s, value %s with dateutil\'s parser - wierd!',
+                                         field, data[field])
+            geom=feature.geometry()
+            if geom:
+                wkt=geom.ExportToWkt()
+            else:
+                wkt=None
             return (data, wkt)
 
     @property
@@ -94,13 +152,14 @@ class OGRLoader(BaseDataLoader):
             transform=getattr(self, '_geomTransform', None)
             if transform or self.data.reprojection:
                 geom=feature.geometry()
-                if transform:
-                    geom=transform(geom)
-                if self.data.reprojection:
-                    geom.Transform( self.data.reprojection )
-                # in theory this makes a copy of the geometry, which
-                # feature then copies - but it seems to fix the crashing issue.
-                feature.SetGeometry(geom.Clone())
+                if geom:
+                    if transform:
+                        geom=transform(geom)
+                    if self.data.reprojection:
+                        geom.Transform( self.data.reprojection )
+                    # in theory this makes a copy of the geometry, which
+                    # feature then copies - but it seems to fix the crashing issue.
+                    feature.SetGeometry(geom.Clone())
         return feature 
     
     def fields(self):
@@ -127,7 +186,8 @@ class OGRLoader(BaseDataLoader):
     
     @property
     def extent(self):
-        return self.data.extent
+        return (self.data.extent[0], self.data.extent[2],
+                self.data.extent[1], self.data.extent[3],)
     
     @property
     def data(self):
@@ -156,6 +216,8 @@ class OGRLoader(BaseDataLoader):
             layer=self.ogr_obj.GetLayer()
             geom_extent=layer.GetExtent()
             geom_type=layer.GetGeomType()
+            if geom_type == 0: # We can determine it experimentally if possible...
+                geom_type=self.determineGeometryType(layer)
             if geom_type not in self.types:
                 raise FormatException('Unsupported Geometry Type (%s)' % (geom_type,))
             spatial_ref=layer.GetSpatialRef()
@@ -193,8 +255,13 @@ class OGRLoader(BaseDataLoader):
                         fields.append((field_name,
                                        field_type,
                                        field_definition.GetType()))
+                        # it appears that sometimes OGR isn't giving us a date type when we iterate
+                        # over values, so we will store the date types and convert if needed when we 
+                        # iterate over the results.
+                        if field_type in (datetime.date, datetime.time, datetime.datetime):
+                            self.datefields[field_name]=field_type
                     else: 
-                        raise FormatException('The field {0} is of an unsupported type'.format(field_name))
+                        raise FormatException('The field {0} is of an unsupported type'.format(field_name,))
                 break
     #         logger.debug('Fields are %s', fields)
             # Just to be on the safe side..
@@ -211,7 +278,8 @@ class OGRLoader(BaseDataLoader):
                                               'type_text',
                                               'fields',
                                               'reprojection', 
-                                              'dest_srs'])
+                                              'dest_srs',
+                                              'dim',])
             # Note that we must preserve the OGR object here (even though
             # we do not use it elsewhere), because
             # otherwise it gets garbage collected, and the OGR Layer object
@@ -239,5 +307,6 @@ class OGRLoader(BaseDataLoader):
                                  type_text=self.types[geom_type],
                                  fields=fields,
                                  dest_srs=epsg_4326,
-                                 reprojection=reprojection)
+                                 reprojection=reprojection,
+                                 dim=self.dimensions)
         return self._data

@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib import sites
 from django.conf import settings
 import hashlib
@@ -7,7 +7,7 @@ import simplejson as json
 import string
 import random
 import sys
-
+User=get_user_model()
 
 
 class Command(BaseCommand):

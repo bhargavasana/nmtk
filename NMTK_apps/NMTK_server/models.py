@@ -3,7 +3,7 @@ from uuidfield import UUIDField
 from jsonfield import JSONField
 from random import choice
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.utils import timezone
 import os
 from django.core.urlresolvers import reverse
 import hashlib
@@ -14,11 +14,13 @@ from django.db import connections, transaction
 from django.conf import settings
 from django.utils.safestring import mark_safe
 from osgeo import ogr
+from django.contrib.gis.gdal import OGRGeometry
 from NMTK_server import tasks
 from NMTK_server import signals
 from NMTK_server.wms.legend import LegendGenerator
 from django.core.validators import MaxValueValidator, MinValueValidator
 import logging
+from django.contrib.auth.models import AbstractUser
 logger=logging.getLogger(__name__)
 
 class IPAddressFieldNullable(models.IPAddressField) :
@@ -56,7 +58,7 @@ fs_results = NMTKResultsFileSystemStorage(location=location)
 
 class PageName(models.Model):
     '''
-    Valid page names (current valid value is nmtk_index)
+    Valid page names (current valid value is nmtk_index, and nmtk_tos)
     '''
     name=models.CharField(max_length=16, null=False,
                           blank=False, help_text='The name for the page this text belongs to')
@@ -72,9 +74,18 @@ class PageContent(models.Model):
     order=models.IntegerField(default=0)
     content=models.TextField()
     enabled=models.BooleanField(default=True)
+    created=models.DateTimeField(editable=False)
+    modified=models.DateTimeField(editable=False)
     class Meta:
         db_table='nmtk_content'
         ordering=['order',]
+        
+    def save(self, *args, **kwargs):
+        ''' On save, update timestamps '''
+        if not self.id:
+            self.created = timezone.now()
+        self.modified = timezone.now()
+        return super(PageContent, self).save(*args, **kwargs)
         
 class ToolServer(models.Model):
     name=models.CharField(max_length=64,
@@ -136,7 +147,7 @@ class Tool(models.Model):
         
     def save(self, *args, **kwargs):
         result=super(Tool, self).save(*args, **kwargs)
-        if self.active:
+        if self.active and not kwargs.get('bypass_refresh', False):
             logger.debug('Detected a save of the Tool model, updating configs.')
             tasks.updateToolConfig.delay(self)
         return result
@@ -289,16 +300,21 @@ class Job(models.Model):
         it's response(s) back immediately.
         '''
         result=super(Job, self).save(*args, **kwargs)
-        if self._old_status == self.UNCONFIGURED and self.status == self.ACTIVE:
+        if self._old_status == self.UNCONFIGURED:
             if hasattr(self, 'job_files_pending'):
                 logger.debug('Saving Job file entries for this job')
                 # Save all the job files.
                 map(lambda f: f.save(), self.job_files_pending)
-            logger.debug('Detected a state change from Unconfigured to ' + 
-                         'Active for job (%s.)', self.pk)
-            logger.debug('Sending job to tool for processing.')
-            # Submit the task to the client, passing in the job identifier.
-            tasks.submitJob.delay(str(self.pk))
+            if self.status == self.ACTIVE:
+                logger.debug('Detected a state change from Unconfigured to ' + 
+                             'Active for job (%s.)', self.pk)
+                logger.debug('Sending job to tool for processing.')
+                status_m=JobStatus(message='NMTK Server received job for processing.',
+                              timestamp=timezone.now(),
+                              job=self)
+                status_m.save()
+                # Submit the task to the client, passing in the job identifier.
+                tasks.submitJob.delay(str(self.pk))
         elif (self.email and self._old_status <> self.status and
               self.status in (self.FAILED, self.TOOL_FAILED, 
                               self.COMPLETE, self.POST_PROCESSING_FAILED)):
@@ -423,6 +439,15 @@ class DataFile(models.Model):
                      # Dir already exists. Ignore...
                      pass
          return path
+     
+    @property
+    def bbox(self):
+        extent=None
+        if not hasattr(self, '_bbox'):
+            if self.srid:
+                extent=list(self.extent.extent)
+            self._bbox=extent
+        return self._bbox
     
     @property
     def spatial(self):

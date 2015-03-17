@@ -1,9 +1,16 @@
 
 <div class="container">
    <div class="row">
-      <div class="col-md-4 col-md-offset-8">
+      <div class="col-md-12 ">
         <div class="widget">
           <div>
+            <span ng-show="other_datafiles.length > 1" class="navbar-left ic-left">
+            <label for="other_job_datafile_select">View other results from this job: </label>
+                <select ng-change="changeJobFile()" id="other_job_datafile_select" 
+                   ng-model="current_datafile_id" name="other_job_datafiles" 
+                   ng-options="item.id as item.description for item in other_datafiles">
+                </select>
+            </span>
             <button ng-click="close()" class="navbar-right btn btn-xs btn-primary ic-right">Close</button>
           </div><br/>
         </div>
@@ -13,15 +20,16 @@
       <div class="col-md-12">
         <div class="widget stacked">
           <div ng-click="toggleDiv('job_result_help')" class="widget-header">
-            <i class="glyphicon glyphicon-info-sign"></i>
-            <h3 ng-show="data_file_tab_name == 'Results'">Job Results <span ng-if="datafile_api.description">- {{datafile_api.description}}</span></h3>            
-            <h3 ng-hide="data_file_tab_name == 'Results'">Data file <span ng-if="datafile_api.description">- {{datafile_api.description}}</span></h3>
+            <span class="glyphicon glyphicon-info-sign"></span>
+            <h1 ng-show="data_file_tab_name == 'Results'">Job Results <span ng-if="datafile_api.description">- {{datafile_api.description}}</span></h1>            
+            <h1 ng-hide="data_file_tab_name == 'Results'">Data file <span ng-if="datafile_api.description">- {{datafile_api.description}}</span></h1>
             <button type="button" class="btn btn-link pull-right btn-right" 
 	                    tooltip="Expand or collapse"
 	                    data-toggle="tooltip" data-placement="right" id="right" 
 	                    title="" data-original-title="Tooltip on right">
-					<i ng-class="{'glyphicon-chevron-right': !isDivEnabled('job_result_help'), 'glyphicon-chevron-down': isDivEnabled('job_result_help')}"
-		               class="navbar-right glyphicon" ></i>
+					<span ng-class="{'glyphicon-chevron-right': !isDivEnabled('job_result_help'), 'glyphicon-chevron-down': isDivEnabled('job_result_help')}"
+		               class="navbar-right glyphicon" ></span>
+					    <span class="sr-only" >Expand or collapse</span>
 		     </button>  
             <button  stop-event='click' class="btn btn-xs btn-primary ic-right navbar-right" ng-click="downloadDatafile(datafile_api)">Download</button>
                      
@@ -78,8 +86,8 @@
       <div class="col-md-6">
         <div class="widget stacked" ng-show="spatial">
           <div class="widget-header">
-            <i class="glyphicon glyphicon-map-marker"></i>
-            <h3>Spatial {{data_file_tab_name}}</h3>
+            <span class="glyphicon glyphicon-map-marker"></span>
+            <h1>Spatial {{data_file_tab_name}}</h1>
             <button class="navbar-right btn btn-xs btn-primary ic-right" ng-click="changeColors()">Change Colors</button>
           </div> <!-- /widget-header -->
           <div class="widget-content">
@@ -90,9 +98,9 @@
         </div><!-- /widget stacked -->
         <div class="widget stacked">
           <div class="widget-header">
-            <i class="glyphicon glyphicon-list"></i>
-            <h3 ng-hide="customFilters.length">All {{data_file_tab_name}}</h3>
-            <h3 ng-show="customFilters.length">Filtered {{data_file_tab_name}}</h3>
+            <span class="glyphicon glyphicon-list"></span>
+            <h1 ng-hide="customFilters.length">All {{data_file_tab_name}}</h1>
+            <h1 ng-show="customFilters.length">Filtered {{data_file_tab_name}}</h1>
             <button ng-show="customFilters.length" class="navbar-right btn btn-xs btn-info ic-right" ng-click="setCustomFilters()" 
                     stop-event="click">Reset Filters</button>
             <button class="navbar-right btn btn-xs btn-primary ic-right" ng-click="advanced_filters()" 
@@ -110,21 +118,21 @@
       <div class="col-md-6">
         <div ng-show="spatial" class="widget stacked">
           <div class="widget-header">
-            <i class="glyphicon glyphicon-picture"></i>
-            <h3>Map Legend - styled by 
-                 <select ng-model="result_field" name="result_field" ng-options="field for field in fields">
+            <span class="glyphicon glyphicon-picture"></span>
+            <h1><label for="style">Map Legend - styled by</label>
+                 <select id="style" ng-model="result_field" name="result_field" ng-options="field for field in fields">
                    <option value=""></option>
                  </select>
-            </h3>
+            </h1>
           </div> <!-- /widget-header -->
           <div style="text-align: center;" class="widget-content">
-            <img ng-src="{{legend_url}}"></img>
+            <img alt="Map legend" ng-src="{{legend_url}}">
           </div> <!-- /widget-content -->
         </div><!-- /widget stacked -->
         <div class="widget stacked">
           <div class="widget-header">
-            <i class="glyphicon glyphicon-plus-sign"></i>
-            <h3>{{selected_features.length}} Selected Features</h3>
+            <span class="glyphicon glyphicon-plus-sign"></span>
+            <h1>{{selected_features.length}} Selected Features</h1>
             <button class="navbar-right btn btn-xs btn-primary ic-right" ng-click="clearSelection()" ng-show="selected_features.length">Clear Selection</button>
           </div> <!-- /widget-header -->
           <div ng-show="selected_features.length" class="widget-content">  
@@ -134,7 +142,19 @@
                Displaying feature {{selected_selected[0].nmtk_id}}
             </h4>
             <table class="table table-bordered table-striped table-highlight">
+			<caption>
+				 <strong>Table Caption</strong>
+				  <details>
+				   <summary>Summary</summary>
+				   <p>Description of table contents</p>
+				  </details>
+				</caption>
+				
               <tbody>
+			  <tr>
+			   <th>Item</th>
+			   <th>Value</th>
+			  </tr>
                 <tr ng-repeat="(item, value) in selected_selected[0] track by item">
                   <td>{{item}}</td>
                   <td>{{value}}</td>
@@ -163,3 +183,4 @@
 
 
 
+</div>

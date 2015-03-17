@@ -29,33 +29,61 @@
  *       OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
  *       SUCH DAMAGE.
  */
-define([], function () {	
+define(['underscore'], function (_) {	
 	"use strict";
-	var controller=['$scope','$log','$modalInstance','datafile',
-        function ($scope, $log, $modalInstance, datafile) {
-		$log.debug(datafile);
-			$scope.datafile_id=datafile.id;
-			$scope.datafile=datafile;
-			var api_path=CONFIG.api_path;
-			if (/\//.test(CONFIG.api_path)) {
-				  api_path=CONFIG.api_path.substring(0, CONFIG.api_path.length-1);
+	var controller=['$scope','$log','$q','$modalInstance','api','id','name','type','operation',
+	                'jobdata','Restangular',
+		function ($scope, $log, $q, $modalInstance, api, id, name, type, operation,
+				  jobdata, Restangular) {
+			$scope.api=api;
+			$scope.id=id;
+			$scope.name=name;
+			$scope.operation=operation;
+			$scope.type=type;
+			$scope.jobs_in=[];
+			$scope.jobs_out=[];
+			Restangular.all('job_results').getList({'job': id,
+													'limit': 999}).then(function (filedata) {
+				if (filedata.length) {
+					_.each(filedata, function (data) {
+						// Get the File ID so we can use it to query to see if it's used at all.
+						var datafile_id=data.datafile.split('/').reverse()[1];
+						Restangular.all('job_file').getList({'datafile': datafile_id}).then(function (job_input_file) {
+							if (job_input_file.length == 0) {
+								$scope.jobs_in.push(data);
+							}
+						});
+					});
+				}
+			});
+			$scope.form_params={'delete': true};
+			
+			
+			
+			$scope.delete=function () {
+				var promises=[];
+				// Remove the job in question, then cascade to the file.
+				// The job needs to go before the file, so we will only do
+				// the file delete after the job delete completes.
+				Restangular.all('job').one(id).remove().then(function () {
+					if ($scope.form_params['delete']) {
+						// Remove each of the job files in question.
+						_.each($scope.jobs_in, function (job_file) {
+							var id=job_file.datafile.split('/').reverse()[1];
+							promises.push(Restangular.all('datafile').one(id).remove());
+						});
+					}
+					var p=$q.all(promises);
+					p.then(function (d) {
+						$modalInstance.close();
+					}, function (d) { $modalInstance.close(); });
+				});
+				
+				// Wait until all the deletes complete before doing the close/refresh.
+				
 			}
-			$scope.isComplete=function (record) {
-				return /complete/i.test(record.status);
-			}
-			$scope.download_url=datafile.download_url;
-			$scope.wms_url=datafile.wms_url;
-			if (datafile.srid) {
-				$scope.spatial=true;
-			} else {
-				$scope.spatial=false;
-			}
-			$scope.file_url=datafile.file;
 			$scope.close=function () {
 				$modalInstance.dismiss();
-			}
-			$scope.getUrl=function(type) {
-				return $scope.download_url + '?output=' + type;
 			}
 		}
 	];

@@ -1,2 +1,2 @@
-<div ng-show="row.entity.message" class="ngCellText" ng-class="col.colIndex()">{{row.entity.message}} at {{row.entity.last_status}}</div>
+<div ng-show="row.entity.message" class="ngCellText" ng-class="col.colIndex()"><i ng-click="viewJobStatusLog(row.entity)" class="glyphicon glyphicon-align-justify"></i> {{row.entity.message}} at {{row.entity.last_status|date:'short'}}</div>
 <div ng-hide="row.entity.message" class="ngCellText" ng-class="col.colIndex()">Not Applicable</div>

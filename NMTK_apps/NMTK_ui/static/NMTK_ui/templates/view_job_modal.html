@@ -7,13 +7,14 @@
   <div class="modal-body">
 	  <form accept-charset="UTF-8" class="form-horizontal" role="form" method="POST">
 	    <fieldset>
+		<legend>Job Details:</legend>
 	      <div ng-repeat="field in fields " class="control-group">
 	        <label class="col-sm-3 control-label" for="{{field.field}}">{{field.display_name}}</label>
 	        <div class="col-sm-9">
 	          <div class="controls"> 
 	            <!-- <p ng-show="{{field.disabled}}">{{jobdata[field.field]}}</p> -->
 	            <input ng-if="field.type == 'input'" ng-disabled="{{field.disabled}}" type="input" class="input" 
-	                 name="{{field.field}}" id="{{field.field}}" ng-model="jobdata[field.field]"></input>
+	                 name="{{field.field}}" id="{{field.field}}" ng-model="jobdata[field.field]">
 	            <textarea msd-elastic ng-if="field.type == 'textarea'" ng-disabled="{{field.disabled}}" type="textarea" class="input" 
 	                 name="{{field.field}}" id="{{field.field}}" ng-model="jobdata[field.field]"></textarea>
 	            

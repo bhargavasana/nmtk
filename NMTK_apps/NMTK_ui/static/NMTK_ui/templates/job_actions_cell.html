@@ -6,10 +6,11 @@
     <li><a ng-hide="row.entity.status != 'Complete'" ng-click="downloadDatafile(null, row.entity)"><i class="glyphicon glyphicon-cloud-download"></i> Download Results</a></li>
     <li><a ng-hide="row.entity.status != 'Complete'" ng-href="#/view_results/{{row.entity.id}}"><i class="glyphicon glyphicon-eye-open"></i> View Results</a></li>
     <li><a ng-click="openDialog(row.entity)"><i class="glyphicon glyphicon-eye-open"></i> View Job Details</a></li>
+    <li><a ng-click="viewJobStatusLog(row.entity)"><i class="glyphicon glyphicon-align-justify"></i> Job Status</a></li>
     <li><a ng-show="row.entity.status == 'Configuration Pending'" ng-click="configureJob(row.entity)"><i class="glyphicon glyphicon-list"></i> Configure Job</a></li>
     <li><a ng-hide="row.entity.status == 'Configuration Pending'" ng-click="configureJob(row.entity)"><i class="glyphicon glyphicon-list"></i> View Configuration</a></li>
     <li class="divider"></li>
-    <li ng-hide="row.entity.status != 'Complete'"><a class="" ng-click="removeFile('job',row.entity,row.entity.description,'Job')"><i class="glyphicon glyphicon-trash"></i> Remove Job</a></li>
+    <li ng-show="row.entity.status == 'Complete'"><a class="" ng-click="deleteJob('job',row.entity,row.entity.description,'Job')"><i class="glyphicon glyphicon-trash"></i> Remove Job</a></li>
     <li ng-show="row.entity.status != 'Complete'"><a class="" ng-click="removeFile('job',row.entity,row.entity.description,'Job', 'Cancel')"><i class="glyphicon glyphicon-trash"></i> Remove Job</a></li>
   </ul>
 </div>

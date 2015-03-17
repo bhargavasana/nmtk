@@ -83,7 +83,7 @@ class CSVLoader(BaseDataLoader):
         if self.spatial:
             if not hasattr(self, '_extent'):
                 for v in self: pass
-            return (self._extent[0], self._extent[2], self._extent[1], self._extent[3],)
+            return (self._extent[0],  self._extent[1], self._extent[2], self._extent[3],)
             
 
     def next(self):
@@ -168,6 +168,7 @@ class CSVLoader(BaseDataLoader):
                 # understood format, we will convert it to a CSV and
                 # write it out to a temporary file.
                 fh, self.temp_file=tempfile.mkstemp(suffix='.csv')
+                os.close(fh)
                 self.filename=self.temp_file
                 try:
                     logger.debug('Attempting to convert to format CSV (from %s)',
@@ -211,6 +212,7 @@ class CSVLoader(BaseDataLoader):
                            }
         for field, ftype in self._fields:
             ft.append((field, OGR_TYPE_MAPPINGS.get(ftype, ogr.OFTString),))
+        logger.debug('Field types are %s', ft)
         return ft
 
     def process_csv(self, filename):

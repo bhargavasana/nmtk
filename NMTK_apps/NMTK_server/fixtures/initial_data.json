@@ -35,13 +35,22 @@
         }
     },
     {
+        "pk": 2,
+        "model": "NMTK_server.pagename",
+        "fields": {
+            "name": "terms_of_service"
+        }
+    },
+    {
         "pk": 1,
         "model": "NMTK_server.pagecontent",
         "fields": {
             "content": "Welcome to the Test Installation of the Non-Motorized Travel Analysis Toolkit (NMTK) web application.  The NMTK is designed to support planning for non-motorized forms of transportation by allowing developers to share analytic tools with planners, who can then use the NMTK to apply those tools to their own data. The NMTK is a distributed system with well-defined interfaces (APIs) that allow agencies, research institutions, or commercial vendors to develop interoperable tools, data management services, and user interfaces.",
             "enabled": true,
             "page": 1,
-            "order": 1
+            "order": 1,
+            "modified": "2013-01-15T19:26:31.332Z",
+            "created": "2013-01-15T19:26:31.332Z"
         }
     },
     {
@@ -51,7 +60,9 @@
             "content": " The test installation you are currently viewing is intended to demonstrate the capabilities of the system, and to conduct system tests.",
             "enabled": true,
             "page": 1,
-            "order": 2
+            "order": 2,
+            "modified": "2013-01-15T19:26:31.332Z",
+            "created": "2013-01-15T19:26:31.332Z"
         }
     },
     {
@@ -61,7 +72,9 @@
             "content": "The NMTK is open source under a liberal BSD-style license.  Interested persons may freely download, install and modify the NMTK code.  Inquiries from persons interested in hosting an NMTK instance, or in developing and distributing additional tools are welcome.",
             "enabled": true,
             "page": 1,
-            "order": 3
+            "order": 3,
+            "modified": "2013-01-15T19:26:31.332Z",
+            "created": "2013-01-15T19:26:31.332Z"
         }
     },
     {
@@ -71,7 +84,9 @@
             "content": "For information on acquiring credentials for the NMTK test installation, or to obtain the source code, contact Jeremy Raw at the Federal Highway Administration (jeremy.raw@dot.gov, 202-366-0986).",
             "enabled": true,
             "page": 1,
-            "order": 4
+            "order": 4,
+            "modified": "2013-01-15T19:26:31.332Z",
+            "created": "2013-01-15T19:26:31.332Z"
         }
     }
 ]

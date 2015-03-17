@@ -257,7 +257,7 @@
           "description":"Number of jobs accessible via transit."
         },
         {
-          "required":true,
+          "required":false,
           "type":"property",
           "name":"Principal",
           "description":"Principal arterial street (1/0)"
@@ -275,15 +275,17 @@
           "description":"Collector street  (1/0)"
         },
         {
-          "required":true,
+          "required":false,
           "type":"property",
+          "display_if_true": "Collector",
           "name":"OnstreetFacility",
           "description":"On street bicycle facility (1/0)"
         },
         {
-          "required":true,
-          "type":"property",
+          "required":false,
+          "type":"boolean",
           "name":"OffstreetTrail",
+          "display_if_filled": "Principal",
           "description":"Off-street trail (1/0)"
         }
       ],

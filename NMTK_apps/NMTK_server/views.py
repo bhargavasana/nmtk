@@ -25,6 +25,17 @@ from registration import models as registration_models
 
 logger=logging.getLogger(__name__)
 
+def terms_of_service(request):
+    template='NMTK_server/terms_of_service.html'
+    site=get_current_site(request) 
+    terms_of_service=models.PageContent.objects.filter(page__name='terms_of_service')
+    if terms_of_service:
+        return render(request, template,
+                      {'page_data': terms_of_service,
+                       'site': site })    
+    else:
+        raise Http404('Page does not exist!')
+
 def registerUser(request):
     if settings.REGISTRATION_OPEN==False:
         return HttpResponseRedirect(reverse('registration_disallowed'))
@@ -32,8 +43,10 @@ def registerUser(request):
                       'NMTK_server/registration_closed.html')
     template='NMTK_server/registration_form.html'
     site=get_current_site(request) 
+    # Returns 0 if there is no terms of service page content...
+    terms_of_service=models.PageContent.objects.filter(page__name='terms_of_service').count()
     if request.method == 'POST':
-        userform=forms.NMTKRegistrationForm(request.POST)
+        userform=forms.NMTKRegistrationForm(request.POST, tos=terms_of_service)
         if userform.is_valid():
             user=userform.save()
             salt=hashlib.sha1(str(random.random())).hexdigest()[:5]
@@ -48,7 +61,8 @@ def registerUser(request):
             return render(request, 
                           'NMTK_server/registration_complete.html')
     else:
-        userform=forms.NMTKRegistrationForm()
+        
+        userform=forms.NMTKRegistrationForm(tos=terms_of_service)
     return render(request, template,
                   {'form': userform,
                    'site': site })    
@@ -135,11 +149,17 @@ def processResults(request):
     
     base_description="Results from '{0}'".format(request.NMTK_JOB.description)
     if config['status'] == 'results':
+        models.JobStatus(message='Received results from Tool Server',
+                         timestamp=timezone.now(),
+                         job=request.NMTK_JOB).save()
         if (not config.has_key('results') or 
             not config['results'].has_key('field') or
             not config['results'].has_key('file')):
             logger.error('Results received with no valid results key ' +
                          'in config (old API?) (%s)', config)
+            models.JobStatus(message='Unable to authenticate request from tool server.',
+                         timestamp=timezone.now(),
+                         job=request.NMTK_JOB).save()
             return HttpResponseServerError('Invalid result format')
         result_field=config['results']['field']
         result_field_units=config['results'].get('units', None)
@@ -148,11 +168,12 @@ def processResults(request):
         
         if config['results']['file'] not in request.FILES:
             logger.error('Specified file for results was not uploaded')
+            models.JobStatus(message='Tool server failed to upload required results file.',
+                         timestamp=timezone.now(),
+                         job=request.NMTK_JOB).save()
             return HttpResponseServerError('Invalid result file specified')
         total=len(request.FILES)-1
         
-        request.NMTK_JOB.status=request.NMTK_JOB.POST_PROCESSING
-        request.NMTK_JOB.save()
         i=0
         for namespace in request.FILES.keys():
             i += 1
@@ -191,9 +212,13 @@ def processResults(request):
                                   datafile=result,
                                   primary=primary)
             rf.save()
-            models.JobStatus(message='COMPLETE',
-                             timestamp=timezone.now(),
-                             job=request.NMTK_JOB).save()
+            
+        request.NMTK_JOB.status=request.NMTK_JOB.POST_PROCESSING
+        request.NMTK_JOB.save()
+        
+        models.JobStatus(message='Post processing results file(s)',
+                         timestamp=timezone.now(),
+                         job=request.NMTK_JOB).save()
     elif config['status'] == 'error':
         logger.debug('config is %s', config)
         models.JobStatus(message='\n'.join(config['errors']),

@@ -40,7 +40,7 @@ def generateMapfile(datafile, style_field,
         if geom_type in datafile.get_geom_type_display().lower():
             break
     data['geom_type']=geom_type
-    res=render_to_string('NMTK_server/mapfile_{0}.map'.format(geom_type), 
+    res=render_to_string('NMTK_server/mapfile_common.map', 
                          data)
     return res
 
@@ -68,7 +68,7 @@ def handleWMSRequest(request, datafile):
     min_result=max_result=None
     values_list=field_attributes.get('values',[])
     if (field_attributes.has_key('type') and 
-        field_attributes.get('type', None) not in ('text',)
+        field_attributes.get('type', None) not in ('text','date',)
         and not field_attributes.has_key('values')):
         min_result=field_attributes['min']
         max_result=field_attributes['max']
@@ -104,7 +104,7 @@ def handleWMSRequest(request, datafile):
     # at creating the legend.
     if get_uc.get('REQUEST', '').lower() == 'getlegendgraphic':
         # Round the value to 4 significant digits.
-        im=legend.generateLegendGraphic(width=300)
+        im=legend.generateLegendGraphic(width=410)
         response=HttpResponse(content_type='image/png')
         im.save(response, 'png')
         return response

@@ -1,0 +1,42 @@
+{% extends "NMTK_server/base.html" %}{% load url from future %}{% load static %}{% load widget_tweaks %}
+{% block title %}Non-Motorized Travel Analysis Toolkit :: NMTK{% endblock%}
+
+{% block right_nav %}
+	{% if ui_installed %} 
+	  <li class="">
+	    <a href="{% url 'nmtk_server_nmtk_ui' %}"><i class=""></i> NMTK Console </a>
+	    <i class="icon-chevron-right"></i>
+	  </li>
+	  {% else %}
+	  <li class="">
+	  	<a href="{% url 'login' %}"><i class=""></i>Login</a>
+	    <i class="icon-chevron-right"></i>
+	  </li>
+	  {% endif %}
+	  {% if user.is_superuser %}
+	     <li><a href="{% url 'admin:index' %}">Site Administration</a></li>
+	  {% endif %}
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+	
+	<div class="row">
+		
+		<div class="span12">
+				<div class="error-details">
+				<br />
+					<p class="lead">Terms of Service</p>
+					{% for row in page_data %}
+					<p>{{row.content|safe}}</p>  
+					{% endfor %}
+				</div> <!-- /error-details -->
+												
+		</div> <!-- /span12 -->
+		
+	</div> <!-- /row -->
+	
+</div> <!-- /container -->
+
+{% endblock %}

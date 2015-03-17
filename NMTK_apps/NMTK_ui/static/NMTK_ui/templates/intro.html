@@ -3,14 +3,16 @@
       <div class="col-md-12">
         <div class="widget stacked">
           <div ng-click="toggleDiv('nmtk_introduction')" class="widget-header">
-            <i class="glyphicon glyphicon-info-sign"></i>
-            <h3>NMTK Introduction</h3>            
+            <span class="glyphicon glyphicon-info-sign"></span>
+            <h1>NMTK Introduction</h1>            
             <button type="button" class="btn btn-link pull-right btn-right" 
 	                    tooltip="Expand or collapse"
 	                    data-toggle="tooltip" data-placement="right" id="right" 
-	                    title="" data-original-title="Tooltip on right">
-					<i ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_introduction'), 'glyphicon-chevron-down': isDivEnabled('nmtk_introduction')}"
-		               class="navbar-right glyphicon" ></i>
+	                    title="Expand or collapse" alt="Expand or collapse" data-original-title="Tooltip on right">
+					<span ng-class="{'glyphicon-chevron-right': !isDivEnabled('nmtk_introduction'), 'glyphicon-chevron-down': isDivEnabled('nmtk_introduction')}"
+		               class="navbar-right glyphicon" ></span>
+					   
+					   <span class="sr-only" >Expand or collapse</span>
 		     </button>  
           </div> <!-- /widget-header -->
           <div id="nmtk_introduction" ng-show="isDivEnabled('nmtk_introduction')" class="widget-content">
@@ -60,8 +62,8 @@
       <div class="col-md-12">
         <div class="widget stacked">
           <div class="widget-header">
-            <i class="glyphicon glyphicon-wrench"></i>
-            <h3>Explore the Available Tools</h3>
+            <span class="glyphicon glyphicon-wrench"></span>
+            <h1>Explore the Available Tools</h1>
           </div> <!-- /widget-header -->
           <div class="widget-content">
             <div ng-grid="gridOptions" class="gridStyle"></div>		

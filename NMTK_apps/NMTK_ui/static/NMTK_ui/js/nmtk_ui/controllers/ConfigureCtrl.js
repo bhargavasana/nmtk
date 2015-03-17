@@ -63,6 +63,36 @@ define(['underscore',
 			$scope.toggleSection=function (type) {
 				$scope.sections[type]=!$scope.sections[type];
 			}
+			
+			
+			$scope.hideField=function (namespace, property) {
+				if ($scope.validation[namespace][property.name].hidden) {
+					return true;
+				}
+				if (! _.isUndefined(property.display_if_true)) {
+					if (_.isUndefined($scope.job_config[namespace])) {
+						return false;
+					}
+					if (! _.isUndefined($scope.job_config[namespace][property.display_if_true])) {
+						if ($scope.job_config[namespace][property.display_if_true].value) {
+							return false;
+						} else {
+							return true;
+						}
+					}
+				}
+				if (! _.isUndefined(property.display_if_filled)) {
+					if (! _.isUndefined($scope.job_config[namespace][property.display_if_filled])) {
+						if (String($scope.job_config[namespace][property.display_if_filled].value).length) {
+							return false;
+						} else {
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+			$scope.disabled=false;
 			$scope.rest.job.then(function (jobs) {
 				var job_data=_.find(jobs, function (job) {
 					return (job.id == jobid);
@@ -75,23 +105,22 @@ define(['underscore',
 				$scope.job_data=job_data;
 				$log.debug('Job data is', job_data);
 				var tool_id=job_data.tool.split('/').reverse()[1];
-				if (job_data.data_file) {
-					var file_id=job_data.data_file.split('/').reverse()[1];
-				} else {
-					var file_id=null;
-				}
 				
-				if (job_data.status != 'Configuration Pending') {
+				if (job_data.config) {
 					// Load the old job config if we are viewing an existing
 					// jobs configuration.
-					$scope.disabled=true;
+					// Jobs not in the "pending" state are not modifiable.
+					if (job_data.status != 'Configuration Pending') {
+						$scope.disabled=true;
+					}
 					$scope.$parent.job_config=JSON.parse(job_data.config);
-					$scope.$parent.job_config_files={};
+					if (_.isUndefined($scope.$parent.job_config_files)) {
+						$scope.$parent.job_config_files={};
+					}
 					_.each(job_data.job_files, function (jf) {
 						$scope.$parent.job_config_files[jf.namespace]=jf.datafile;
 					});
 				}
-				$log.debug('Setting is ', $scope.disabled);
 				$scope.rest.tool.then(function (row) {
 					var tool_data=_.find(row, function(toolinfo) {
 						return (toolinfo.id==tool_id);
@@ -124,15 +153,20 @@ define(['underscore',
 					$scope.validation={};
 					if (! $scope.$parent.job_config) {
 						$scope.$parent.job_config={};
-						$scope.$parent.job_config_files={};
 						new_config=true;
+					}
+					if (_.isUndefined($scope.$parent.job_config_files) && 
+						$scope.$parent.job_config_files != true) {
+						$scope.$parent.job_config_files={};
 					}
 					 
 					_.each(['input','output'], function (section) {
 						_.each(tool_data.config[section], function (data) {
 							if (new_config) {
 								$scope.$parent.job_config[data.namespace]={};
-								$scope.$parent.job_config_files[data.namespace]='';
+								if (_.isUndefined($scope.$parent.job_config_files[data.namespace])) {
+									$scope.$parent.job_config_files[data.namespace]='';
+								}
 							}
 							$scope.validation[data.namespace]={};
 							_.each(data.elements, function (config_set) {
@@ -158,10 +192,6 @@ define(['underscore',
 																					 'hidden': config_set.hidden,
 																					 'readonly': config_set.readonly,
 										        									 'choices': config_set.choices };
-								if (/boolean/i.test(config_set.type)) {
-									$scope.validation[data.namespace][config_set.name]['choices']={'True': true,
-											 													   'False': false};
-								}
 							});
 						});
 					});
@@ -439,9 +469,17 @@ define(['underscore',
 			
 			
 			$scope.submit_attempted=false;
-			$scope.submit_job=function () {
+			// If save_job is true then we want to simply save the current configuration.
+			// So we just send it up to the server to be saved - without validation.
+			$scope.submit_job=function (save_job) {
+				if (_.isUndefined(save_job)) {
+					save_job=false;
+				}
 				$log.debug($scope.job_config_form, $scope.validation);
-				if ($scope.job_config_form.$invalid) {
+				// If we are trying to save the job status (not submit it) then
+				// we don't need to perform validation, since we will do that when
+				// the user tries to submit the job itself.
+				if ((! save_job) && $scope.job_config_form.$invalid) {
 					$scope.submit_attempted=true;
 					var opts = {
 						    template: configureErrorsClientTemplate, // OR: templateUrl: 'path/to/view.html',
@@ -455,6 +493,9 @@ define(['underscore',
 				} else {
 					$scope.resources['job'].getList({'job_id': $scope.job_data.id}).then(function (response) {
 						var data=response[0];
+						if (! save_job) {
+							data.status='A';
+						}
 						data.config=$scope.$parent.job_config;
 						// Need to pass in the file configuration as well.
 						data.file_config=$scope.$parent.job_config_files;
@@ -483,8 +524,7 @@ define(['underscore',
 						});
 					});
 				}
-			}
-		
+			}		
 			
 			
 			/* I had this in a custom directive before, but the reality is that

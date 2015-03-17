@@ -91,7 +91,7 @@ class FeedbackAdmin(admin.ModelAdmin):
     
     
 class PageContentAdmin(admin.ModelAdmin):
-    list_display=['page', 'order', 'enabled']
+    list_display=['page', 'order', 'enabled', 'modified']
 
 class PageNameAdmin(admin.ModelAdmin):
     list_display=['pk', 'name']

@@ -176,7 +176,9 @@ def data_query(request, datafile):
             data[db_col]=getattr(row, col)
         result['data'].append(data)
         
-    return HttpResponse(json.dumps(result), mimetype='application/json')
+    date_handler=lambda data: data.isoformat() if hasattr(data, 'isoformat') else data
+    return HttpResponse(json.dumps(result,
+                                   default=date_handler), mimetype='application/json')
 
 def pager_output(request, datafile):
     try:
@@ -250,5 +252,6 @@ def pager_output(request, datafile):
                 if col != 'nmtk_geometry':
                     data[db_col]=getattr(row, col)
             result['data'].append(data)
-        
-    return HttpResponse(json.dumps(result), mimetype='application/json')
+    date_handler=lambda data: data.isoformat() if hasattr(data, 'isoformat') else data
+    return HttpResponse(json.dumps(result,
+                                   default=date_handler), mimetype='application/json')

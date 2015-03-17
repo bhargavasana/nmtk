@@ -19,6 +19,11 @@ td.centered, th.centered, div.centered {
 .modal input, .modal select, .model textarea {
     width: 100%;
 }
+
+input[type="checkbox"] {
+	width: auto;
+} 
+
 textarea {
     width: 100%;
 }

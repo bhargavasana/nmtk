@@ -1,8 +1,8 @@
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core import serializers
-
+User=get_user_model()
 
 from django.conf import settings
 class Command(BaseCommand):

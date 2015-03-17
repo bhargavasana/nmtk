@@ -17,7 +17,7 @@ from NMTK_apps.helpers.data_output import getQuerySet
 from NMTK_server.data_loaders.loaders import NMTKDataLoader
 from django.core.files import File
 from django.contrib.gis import geos
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management.commands import inspectdb
@@ -73,7 +73,7 @@ def generate_datamodel(datafile, loader):
         this_model=None
         colors=[]
         model_content=['from django.contrib.gis.db import models']
-        feature_id=1
+#         feature_id=1
         for (row, geometry) in loader:
             if not db_created:
                 db_created=True
@@ -82,8 +82,8 @@ def generate_datamodel(datafile, loader):
                 # Create the model for this data
                 model_content.append('class Results_{0}(models.Model):'.format(datafile.pk))
                 # Add an auto-increment field for it (the PK)
-                model_content.append('{0}nmtk_id=models.IntegerField(primary_key=True)'.format(' ' * 4))
-                model_content.append('{0}nmtk_feature_id=models.IntegerField()'.format(' '*4))
+                model_content.append('{0}nmtk_id=models.AutoField(primary_key=True, )'.format(' ' * 4))
+#                 model_content.append('{0}nmtk_feature_id=models.IntegerField()'.format(' '*4))
                 # Add an entry for each of the fields
                 # So instead of doing this - getting the keys to figure out the fields
                 fields_types=loader.info.fields_types
@@ -94,10 +94,11 @@ def generate_datamodel(datafile, loader):
                               float: ('models.FloatField',''),
                               datetime.date: ('models.DateField',''),
                               datetime.time: ('models.TimeField',''),
+                              bool: ('models.BooleanField',''),
                               datetime.datetime: ('models.DateTimeField',''),}
                 for field_name, field_type in fields_types:
                     if field_type not in type_mapping:
-                        logger.error('No type mapping exists for type %s (using TextField)!', field_type)
+                        logger.info('No type mapping exists for type %s (using TextField)!', field_type)
                         field_type=str
                     model_content.append("""{0}{1}={2}({3} null=True, db_column='''{4}''')""".
                                          format(' '*4, 
@@ -107,8 +108,9 @@ def generate_datamodel(datafile, loader):
                                                 field_name)
                                          )    
                 if spatial:
-                    model_content.append('''{0}nmtk_geometry={1}(null=True, srid=4326)'''.
-                                         format(' '*4, model_type))
+                    model_content.append('''{0}nmtk_geometry={1}(null=True, srid=4326, dim={2})'''.
+                                         format(' '*4, model_type,
+                                                loader.info.dimensions))
                 model_content.append('''{0}objects=models.GeoManager()'''.format(' '*4,))
                 
                 model_content.append('''{0}class Meta:'''.format(' '*4,))
@@ -125,16 +127,11 @@ def generate_datamodel(datafile, loader):
                 connection=connections[database] 
                 cursor=connection.cursor()
                 for statement in connection.creation.sql_create_model(Results_model, no_style())[0]:
-                    #logger.debug(statement)
                     cursor.execute(statement)
                 for statement in connection.creation.sql_indexes_for_model(Results_model, no_style()):
-                    #logger.debug(statement)
                     cursor.execute(statement)
             
             this_row=dict((field_map[k],v) for k,v in row.iteritems())
-            this_row['nmtk_id']=this_row.get('nmtk_id', feature_id)
-            this_row['nmtk_feature_id']=this_row.get('nmtk_id', feature_id)
-            feature_id += 1
             if spatial:
                 this_row['nmtk_geometry']=geometry
             if datafile.result_field:
@@ -150,64 +147,11 @@ def generate_datamodel(datafile, loader):
             try:
                 m.save(using=database)
             except Exception, e:
-                logger.error('Failed to save record from data file (%s)', this_row)
+                logger.exception('Failed to save record from data file (%s)', this_row)
+                logger.error('The type of data in question was %s (%s)',m, this_row )
                 raise e
-#             logger.debug('Saved model with pk of %s', m.pk)
         logger.debug('Completing transferring results to %s database %s', dbtype,datafile.pk,)
-#         if spatial:
-#             logger.debug('Spatial result generating styles (%s-%s)', min_result, max_result)
-#             step=math.fabs((max_result-min_result)/256)
-#             colors=[]
-#             low=min_result
-#             v=min_result
-#             while v <= max_result+step:
-#                 #logger.debug('Value is now %s', v)
-#                 r,g,b=ramp_function(v, min_result, max_result)
-#                 colors.append({'r': r,
-#                                'g': g,
-#                                'b': b,
-#                                'low': low ,
-#                                'high': v})
-#                 low=v
-#                 v += step or 1
-#             
-#             data={'datafile': datafile,
-#                   'dbtype': dbtype,
-#                   'result_field': datafile.result_field,
-#                   'static': min_result == max_result,
-#                   'min': min_result,
-#                   'max': max_result,
-#                   'colors': colors,
-#                   'mapserver_template': settings.MAPSERVER_TEMPLATE }
-#             data['connectiontype']='POSTGIS'
-#             dbs=settings.DATABASES['default']
-#             data['connection']='''host={0} dbname={1} user={2} password={3} port={4}'''.format(dbs.get('HOST', None) or 'localhost',
-#                                                                                                dbs.get('NAME'),
-#                                                                                                dbs.get('USER'),
-#                                                                                                dbs.get('PASSWORD'),
-#                                                                                                dbs.get('PORT', None) or '5432')
-#             data['data']='nmtk_geometry from userdata_results_{0}'.format(datafile.pk)
-#             data['highlight_data']='''nmtk_geometry from (select * from userdata_results_{0} where nmtk_id in (%ids%)) as subquery
-#                                       using unique nmtk_id'''.format(datafile.pk)
-#             res=render_to_string('NMTK_server/mapfile_{0}.map'.format(mapfile_type), 
-#                                  data)
-#             datafile.mapfile.save('mapfile.map', ContentFile(res), save=False)
-#             datafile.legendgraphic.save('legend.png', ContentFile(''), save=False)
-            
-#             logger.debug('Creating a new legend graphic image %s', datafile.legendgraphic.path)
-# #             im=generateColorRampLegendGraphic(min_text='{0}'.format(math.floor(min_result*100.0)/100.0),
-# #                                               max_text='{0}'.format(math.ceil(max_result*100.0)/100.0),
-# #                                               units=datafile.result_field_units)
-# 
-#             round_to_n = lambda x, n: round(x, -int(math.floor(math.log10(x))) + (n - 1))
-# #             round_digits = lambda x, n: round(x, int(n - math.ceil(math.log10(abs(x)))))
-#             # Round to 4 significant digits here, but first make sure we floor/ceil as needed to ensure
-#             # we might include the correct min/max values.
-#             im=generateColorRampLegendGraphic(min_text=round_to_n(min_result,4),
-#                                               max_text=round_to_n(max_result,4),
-#                                               units=datafile.result_field_units)
-#             im.save(datafile.legendgraphic.path, 'png')
-#             logger.debug('Image saved at %s', datafile.legendgraphic.path)
+
     except Exception, e:
         logger.exception ('Failed to create spatialite results table')
         return datafile
@@ -217,8 +161,6 @@ def generate_datamodel(datafile, loader):
 
 @task(ignore_result=True)
 def email_user_job_done(job):
-#    from NMTK_server import models
-#    job=models.Job.objects.select_related('user','tool').get(pk=job_id)
     context={'job': job,
              'user': job.user,
              'tool': job.tool,
@@ -237,6 +179,7 @@ def email_user_job_done(job):
 def add_toolserver(name, url, username, remote_ip=None):
     from NMTK_server import models
     try:
+        User=get_user_model()
         user=User.objects.get(username=username)
     except Exception, e:
         raise CommandError('Username specified (%s) not found!' % 
@@ -294,7 +237,7 @@ def cancelJob(job_id, tool_id):
     logger.debug('Cancelling job %s to tool %s for processing', job_id,
                  tool)
     config_data=job_id
-    digest_maker =hmac.new(str(job.tool.tool_server.auth_token), 
+    digest_maker =hmac.new(str(tool.tool_server.auth_token), 
                            config_data, 
                            hashlib.sha1)
     digest=digest_maker.hexdigest()
@@ -348,6 +291,13 @@ def submitJob(job_id):
                                      'job (return code %s)') % (r.status_code,))
         js.save()
         job.save()
+    else:
+        status_m=models.JobStatus(message='Submitted job to {0} tool, response was {1} ({2})'.format(job.tool, 
+                                                                                                 r.text, 
+                                                                                                 r.status_code),
+                              timestamp=timezone.now(),
+                              job=job)
+        status_m.save()
         
     
 @task(ignore_result=False)
@@ -440,6 +390,7 @@ def updateToolConfig(tool):
     # we don't call the post_save handler, which would result in
     # a recursion loop.
     logger.debug('Setting tool name to %s', config_data['info']['name'])
+    # This doesn't call the save method, so we're okay here in preventing a loop.
     models.Tool.objects.filter(pk=config.tool.pk).update(name=config_data['info']['name'])
     
          
@@ -452,9 +403,18 @@ def importDataFile(datafile, job_id=None):
                               srid=datafile.srid)
         if loader.is_spatial:
             datafile.srid=loader.info.srid
-            datafile.extent=geos.Polygon.from_bbox(loader.info.extent)
             datafile.srs=loader.info.srs
             datafile.geom_type=loader.info.type
+            logger.debug('Loader extent is %s', loader.info.extent)
+            extent=geos.Polygon.from_bbox(loader.info.extent)
+            logger.debug("Extent is 'srid=%s;%s'::geometry", loader.info.srid, 
+                         extent,)
+            if datafile.srid:
+                extent.srid=int(loader.info.srid)
+                extent.transform(4326)
+            logger.debug("Extent is 'srid=%s;%s'::geometry", 4326, 
+                         extent,)
+            datafile.extent=extent
         datafile.feature_count=loader.info.feature_count
         if loader.is_spatial and not datafile.srid:
             datafile.status=datafile.IMPORT_FAILED
@@ -482,6 +442,7 @@ def importDataFile(datafile, job_id=None):
                 field_attributes={}
                 qs=getQuerySet(datafile)
                 field_mappings=[(django_model_fields.IntegerField, 'integer',),
+                                (django_model_fields.AutoField, 'integer',), # Required because nmtk_id is an autofield..
                                 (django_model_fields.BooleanField, 'boolean',),
                                 (django_model_fields.DecimalField, 'float',), # Special case holding FIPS
                                 (django_model_fields.TextField, 'text',),
@@ -489,36 +450,67 @@ def importDataFile(datafile, job_id=None):
                                 (django_model_fields.DateField, 'date',),
                                 (django_model_fields.TimeField, 'time'),
                                 (django_model_fields.DateTimeField, 'datetime')]
-                # Get a single row so that we can try to work with the fields.
-                sample_row=qs[0]
-                for field in sample_row._meta.fields:
-                    field_name=field.name
-                    db_column=field.db_column or field.name
-                    # convert the django field type to a text string.
-                    for ftype, field_type in field_mappings:
-                        if isinstance(field, (ftype,)):
-                            break
-                    else:
-                        logger.info('Unable to map field of type %s (this is expected for GIS fields)', type(field,))
-                        continue
-                    values_aggregates=qs.aggregate(Max(field_name), Min(field_name), Count(field_name,
-                                                                                      distinct=True))
-                    field_attributes[db_column]={'type': field_type, 
-                                                 'field_name': field_name,
-                                                 'min': values_aggregates['{0}__min'.format(field_name)], 
-                                                 'max': values_aggregates['{0}__max'.format(field_name)],
-                                                 'distinct': values_aggregates['{0}__count'.format(field_name)]}
-                    if field_attributes[db_column]['distinct'] < 10:
-                        distinct_values=list(qs.order_by().values_list(field_name, flat=True).distinct())
-                        field_attributes[db_column]['values']=distinct_values
-                datafile.field_attributes=field_attributes
+                if qs.count() > 0:
+                    # Get a single row so that we can try to work with the fields.
+                    sample_row=qs[0]
+                    for field in sample_row._meta.fields:
+                        field_name=field.name
+                        db_column=field.db_column or field.name
+                        # convert the django field type to a text string.
+                        for ftype, field_type in field_mappings:
+                            if isinstance(field, (ftype,)):
+                                break
+                        else:
+                            logger.info('Unable to map field of type %s (this is expected for GIS fields)', type(field,))
+                            continue
+                        values_aggregates=qs.aggregate(Count(field_name, distinct=True))
+                        field_attributes[db_column]={'type': field_type, 
+                                                     'field_name': field_name,
+                                                     'distinct': values_aggregates['{0}__count'.format(field_name)]}
+                        if field_attributes[db_column]['distinct'] < 10:
+                            distinct_values=list(qs.order_by().values_list(field_name, flat=True).distinct())
+                            field_attributes[db_column]['values']=distinct_values
+                        else:
+                            logger.debug('There are more than 10 values for %s (%s), enumerating..', db_column, 
+                                         field_attributes[db_column]['distinct'])
+                            # formerly the aggregates happened above - with the count. However, Django doesn't
+                            # allow those aggregates with boolean fields - so here we split it up to only do the
+                            # aggregates in the cases where we have to (i.e., the distinct values is above the threshold.)
+                            values_aggregates=qs.aggregate(Max(field_name), Min(field_name), )
+                            field_attributes[db_column]['min']= values_aggregates['{0}__min'.format(field_name)]
+                            field_attributes[db_column]['max']= values_aggregates['{0}__max'.format(field_name)]
+                    datafile.field_attributes=field_attributes
             except Exception, e:
                 logger.exception('Failed to get range for model %s',
                                  datafile.pk)
         if job_id:
             try:
                 job=models.Job.objects.get(pk=job_id)
-                job.status=job.COMPLETE
+                # There might be multiple results files from this job, so we will only
+                # mark the job as complete if all the results files are processed.
+                if job.status != job.COMPLETE:
+                    results_left=job.job_files.filter(status=models.DataFile.PROCESSING_RESULTS).count()
+                    if results_left == 0:
+                        job.status=job.COMPLETE
+                        models.JobStatus(message='Job Completed',
+                                         timestamp=timezone.now(),
+                                         job=job).save()
+                    elif results_left == 1:
+                        # Handle the potential race condition here - do we really need this?
+                        # sort of.  Since it's possible that two files finish post-processing
+                        # at the same time.  In such cases, a second should be more than enough
+                        # time to get both committed as complete.
+                        time.sleep(1)
+                        job=models.Job.objects.get(pk=job_id)
+                        if job.status != job.COMPLETE:
+                            results_left=job.job_files.filter(status=models.DataFile.PROCESSING_RESULTS).count()
+                            if results_left == 0:
+                                job.status=job.COMPLETE
+                                models.JobStatus(message='Job Completed',
+                                                 timestamp=timezone.now(),
+                                                 job=job).save()
+                    
+                    
             except: 
                 logger.exception('Failed to update job status to complete?!!')
     except Exception, e:

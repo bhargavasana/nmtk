@@ -501,7 +501,7 @@ define(['underscore'
 														  controller: 'SwitchJobCtrl'});
 							modal_dialog.result.then(function () {
 								$scope.job_config=undefined;
-								$scope.job_config_file=undefined;
+								$scope.job_config_files=undefined;
 								$scope.errors=undefined;
 								$scope.working_job_id=job.id;
 								$location.path('/job/' + $scope.working_job_id + '/');
@@ -572,6 +572,8 @@ define(['underscore'
 						}
 					}
 					$scope.createJob=function (tool_uri, default_config, default_files, default_file_config) {
+						$scope.job_config_files={};
+						$scope.job_config={};
 						if (! $scope.user.is_active) {
 							$scope.login({'post_func': function () { $scope.createJob(tool_uri, 
 																					  default_config,
@@ -591,19 +593,18 @@ define(['underscore'
 										var uri='/job/' + api_result.resource_uri.split('/').reverse()[1] + '/';
 										if (typeof default_config !== 'undefined') {
 											$scope.rest['datafile'].then(function (user_files) {
-												if (typeof default_files !== 'undefined' && default_files) {
-													$scope.job_config_files={};
+												if (! _.isUndefined(default_files)) {
 													_.each(default_files, function (sample_file) {
 														var f=_.find(user_files, function (user_file) {
 															return (sample_file.checksum == user_file.checksum);
 														});
-														if (typeof f !== 'undefined') {
+														if (!_.isUndefined(f)) {
 															$scope.job_config_files[sample_file.namespace]=f.resource_uri;
 														}
 													});
-												} else if (typeof default_file_config !== 'undefined' && default_file_config) {
+												} else if (!_.isUndefined(default_file_config)) {
 													$scope.job_config_files=default_file_config;
-												}
+												} 
 												
 												$scope.job_uri=uri;
 												$scope.job_config=default_config;

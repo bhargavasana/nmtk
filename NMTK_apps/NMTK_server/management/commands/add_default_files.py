@@ -1,7 +1,9 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from NMTK_server.default_data.init_account import setupAccount
 from django.conf import settings
+User=get_user_model()
+
 class Command(BaseCommand):
     help = 'Add default files to user accounts ' + \
            '(all accounts, or specify space-separate names on the command line).'

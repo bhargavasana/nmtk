@@ -5,7 +5,7 @@ from tastypie.exceptions import Unauthorized
 from tastypie.authentication import SessionAuthentication
 from tastypie.http import HttpForbidden, HttpUnauthorized
 from tastypie import fields, utils
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate, login, logout
 from django.core.urlresolvers import reverse
 from tastypie.authorization import Authorization
@@ -21,7 +21,6 @@ from NMTK_server.wms import wms_service
 from validation.tool_config_validator import ToolConfigValidator
 import simplejson as json
 from tastypie.validation import Validation
-from django.contrib.gis.gdal import OGRGeometry
 from PIL import Image
 import cStringIO as StringIO
 import logging
@@ -29,6 +28,7 @@ import re
 import os
 logger=logging.getLogger(__name__)
 
+User=get_user_model()
 
 class CSRFBypassSessionAuthentication(SessionAuthentication):
     def is_authenticated(self, request, **kwargs):
@@ -68,7 +68,8 @@ class UserResourceAuthorization(Authorization):
         username that matches the current logged in user.  In short, you 
         can see your information, but noone elses.
         '''
-        if bundle.request.user.is_superuser and bundle.request.GET.get('all', False):
+        if ((bundle.request.user.is_superuser or bundle.request.user.is_staff) 
+            and bundle.request.GET.get('all', False)):
             return object_list
         return object_list.filter(pk=bundle.request.user.pk)
 
@@ -82,7 +83,7 @@ class UserResourceAuthorization(Authorization):
         causes the server to continue to function without an exception.  Other
         things (like not authorized) cause a 500
         '''
-        if bundle.request.user.is_superuser:
+        if bundle.request.user.is_superuser or bundle.request.user.is_staff:
             return True
         elif bundle.obj.pk <> bundle.request.user.pk:
             raise Unauthorized('You lack the privilege to access this resource')
@@ -294,7 +295,10 @@ class FeedbackResourceAuthorization(Authorization):
         username that matches the current logged in user.  In short, you 
         can see your information, but noone elses.
         '''
-        return object_list
+        if bundle.request.user.is_staff or  bundle.request.user.is_superuser:
+            return object_list
+        else:
+            return [row for row in object_list if row.user == bundle.request.user]
 
     def read_detail(self, object_list, bundle):
         '''
@@ -330,13 +334,13 @@ class FeedbackResourceAuthorization(Authorization):
         return True
     
 class FeedbackResource(ModelResource):
+    user=fields.ToOneField(UserResource,'user')
     class Meta:
         queryset = models.Feedback.objects.all()
         authorization=FeedbackResourceAuthorization()
         always_return_data = True
         resource_name = 'feedback'
         allowed_methods=['get','post']
-        excludes=['user']
         authentication=SessionAuthentication()
         validation=Validation()
         filtering= {'uri': ALL}
@@ -347,9 +351,14 @@ class FeedbackResource(ModelResource):
     
     def get_object_list(self, request):
         '''
-        Ensure a user only sees their own feedback.
+        Ensure a user only sees their own feedback. Note that passing "all=True"
+        allows a superuser/staff member to view all feedback via the API.  The check
+        for permission is in the FeedbackResourceAuthorization object.
         '''
-        return super(FeedbackResource, self).get_object_list(request).filter(user=request.user)
+        if request.GET.get('all', False):
+            return super(FeedbackResource, self).get_object_list(request)
+        else:
+            return super(FeedbackResource, self).get_object_list(request).filter(user=request.user)
 
 class UserPreferenceAuthorization(Authorization):
     def read_list(self, object_list, bundle):
@@ -772,7 +781,8 @@ class DataFileResource(ModelResource):
         bundle.data['fields']=json.dumps(bundle.obj.fields)
         bundle.data['field_attributes']=json.dumps(bundle.obj.field_attributes)
         if bundle.data['extent']:
-            bundle.data['bbox']=OGRGeometry(bundle.data['extent']).extent
+            bundle.data['bbox']=bundle.obj.bbox
+            
         return bundle
 
 class ToolResource(ModelResource):
@@ -791,8 +801,9 @@ class ToolResource(ModelResource):
         allowed_methods=['get',]
         
     def dehydrate(self, bundle):
-        bundle.data['config']=bundle.obj.toolconfig.json_config
         bundle.data['id']=bundle.obj.pk
+        if bundle.obj.toolconfig:
+            bundle.data['config']=bundle.obj.toolconfig.json_config
         return bundle
     
 class MapColorStyleResource(ModelResource):
@@ -1053,16 +1064,32 @@ class JobResourceValidation(Validation):
                 validator=ToolConfigValidator(job=bundle.obj, 
                                               tool_config=bundle.data['config'],
                                               file_config=bundle.data['file_config'])
+                # Remove any job files from a previous save
+                bundle.obj.jobfile_set.all().delete()
                 if validator.is_valid():
                     bundle.obj.config=validator.genToolConfig() # Returns a valid tool config.
                     # Stick the job files here, we can have the model save them.
                     # the model looks at job_files_pending when it sees a state change,
                     # and only then will it save the job files.
                     bundle.obj.job_files_pending=validator.genJobFiles()
-                        
-                    bundle.obj.status=bundle.obj.ACTIVE
-                else:
+                    # Update the job status if the user has set it to active, this
+                    # allows us to store a config that isn't complete.
+                    if bundle.data['status'] == 'A':
+                        logger.debug('Setting job status to ACTIVE')
+                        bundle.obj.status=bundle.obj.ACTIVE
+                elif bundle.data['status'] == 'A':
+                    logger.debug('Validator errors are %s', validator.errors)
                     errors['config']=validator.errors
+                else: # here we are just saving an (invalid) config
+                    logger.debug('Saving the config only')
+                    bundle.obj.config=validator.genToolConfig(force=True) # Returns a valid tool config.
+                    # Stick the job files here, we can have the model save them.
+                    # the model looks at job_files_pending when it sees a state change,
+                    # and only then will it save the job files.
+                    bundle.obj.job_files_pending=validator.genJobFiles(force=True)
+                    logger.debug('Proposed job files are %s from %s', 
+                                 bundle.obj.job_files_pending,
+                                 bundle.data['file_config'])
         return errors
          
 
@@ -1303,3 +1330,24 @@ class JobStatusResource(ModelResource):
         allowed_methods=['get',]
         filtering= {'job': ALL,
                     'job_id': ALL}
+
+
+class PageNameResource(ModelResource):
+    class Meta:
+        queryset = models.PageName.objects.all()
+        resource_name = 'page_name'
+        always_return_data = True
+        allowed_methods=['get',]
+        
+class PageContentResource(ModelResource):
+    
+    page=fields.ToOneField(PageNameResource, 'page')
+    class Meta:
+        queryset = models.PageContent.objects.filter(enabled=True)
+        resource_name = 'page_content'
+        always_return_data = True
+        allowed_methods=['get',]
+        filtering= {'page': ALL,}
+        
+
+    

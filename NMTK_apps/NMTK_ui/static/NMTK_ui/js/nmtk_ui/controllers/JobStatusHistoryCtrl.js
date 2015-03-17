@@ -31,31 +31,23 @@
  */
 define([], function () {	
 	"use strict";
-	var controller=['$scope','$log','$modalInstance','datafile',
-        function ($scope, $log, $modalInstance, datafile) {
-		$log.debug(datafile);
-			$scope.datafile_id=datafile.id;
-			$scope.datafile=datafile;
-			var api_path=CONFIG.api_path;
-			if (/\//.test(CONFIG.api_path)) {
-				  api_path=CONFIG.api_path.substring(0, CONFIG.api_path.length-1);
+	var controller=[  '$scope','Restangular', '$modalInstance'
+	                , '$log', 'jobdata', '$location','$timeout',
+        function ($scope, Restangular, $modalInstance, $log, jobdata, $location, $timeout) {
+			$scope.jobdata=jobdata;
+			$scope.updateStatus=function (timeout) {
+				Restangular.all('job_status').getList({'job': jobdata.id,
+	     		     								   'limit': 999}).then(function (statuses) {
+	     		     									 $scope.statuses=statuses.slice().reverse();
+	     		     								   });
+				if (! _.isUndefined(timeout)) {
+					$scope.timeout=$timeout(function () { $scope.updateStatus(timeout) }, timeout);
+				}
 			}
-			$scope.isComplete=function (record) {
-				return /complete/i.test(record.status);
-			}
-			$scope.download_url=datafile.download_url;
-			$scope.wms_url=datafile.wms_url;
-			if (datafile.srid) {
-				$scope.spatial=true;
-			} else {
-				$scope.spatial=false;
-			}
-			$scope.file_url=datafile.file;
+			$scope.updateStatus(2000);
+			$scope.$on('$destroy', function () { $timeout.cancel($scope.timeout); })
 			$scope.close=function () {
-				$modalInstance.dismiss();
-			}
-			$scope.getUrl=function(type) {
-				return $scope.download_url + '?output=' + type;
+				$modalInstance.close(false);
 			}
 		}
 	];

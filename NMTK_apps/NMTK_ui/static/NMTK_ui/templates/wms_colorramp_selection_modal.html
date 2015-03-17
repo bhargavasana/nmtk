@@ -8,7 +8,7 @@
       <form novalidate name="form">
 	      <div class="col-md-12">  	
 	        <div class="control-group">
-	          <label class="control-group" for="job">Choose the style you wish to use for the current map.</label>
+	          <span class="control-group"><strong>Choose the style you wish to use for the current map.</strong></span>
               <p class="help-block">Styles are organized by category, choose a category below to see available styles.</p>
 	            <div class="btn-group btn-group-sm" role="group" aria-label="..." >
 				  <button type="button" ng-class="{true: 'active'}[selected.category == category]" class="btn btn-default" ng-click="updateFilters(category)" ng-repeat="category in categories">{{category}}</button>

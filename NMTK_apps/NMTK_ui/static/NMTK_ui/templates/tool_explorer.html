@@ -3,14 +3,15 @@
       <div class="col-md-12">
         <div class="widget stacked">
           <div ng-click="toggleDiv('toolexplorer_intro')" class="widget-header">
-            <i class="glyphicon glyphicon-info-sign"></i>
-            <h3>Tool Explorer Introduction</h3>
+            <span class="glyphicon glyphicon-info-sign"></span>
+            <h1>Tool Explorer Introduction</h1>
 	            <button type="button" class="btn btn-link pull-right btn-right" 
 	                    tooltip="Expand or collapse"
 	                    data-toggle="tooltip" data-placement="right" id="right" 
 	                    title="" data-original-title="Tooltip on right">
-					<i ng-class="{'glyphicon-chevron-right': !isDivEnabled('toolexplorer_intro'), 'glyphicon-chevron-down': isDivEnabled('toolexplorer_intro')}"
-		               class="navbar-right glyphicon" ></i>
+					<span ng-class="{'glyphicon-chevron-right': !isDivEnabled('toolexplorer_intro'), 'glyphicon-chevron-down': isDivEnabled('toolexplorer_intro')}"
+		               class="navbar-right glyphicon" ></span>
+					    <span class="sr-only" >Expand or collapse</span>
 		        </button>
           </div> <!-- /widget-header -->
           <div ng-show="isDivEnabled('toolexplorer_intro')" class="widget-content">
@@ -61,8 +62,8 @@
       <div class="col-md-6">
           <div class="widget">
             <div class="widget-header">
-              <i class="glyphicon glyphicon-wrench"></i>
-              <h3>Explore the Available Tools</h3>
+              <span class="glyphicon glyphicon-wrench"></span>
+              <h1>Explore the Available Tools</h1>
             </div> <!-- /widget-header -->
             <div class="widget-content">
 	  		  <section>
@@ -74,15 +75,15 @@
 
           <div ng-show="selections[0]" class="widget">
             <div class="widget-header">
-              <i class="glyphicon glyphicon-link"></i>
-              <h3>Documentation Links</h3>
+              <span class="glyphicon glyphicon-link"></span>
+              <h1>Documentation Links</h1>
             </div> <!-- /widget-header -->
             <div class="widget-content">
 			  <section id="tables">
 				<table class="table table-bordered table-striped table-highlight"> 
 				  <tbody>
 					<tr ng-repeat="link in selections[0].config.documentation.links">						            
-					  <td><a ng-href="{{link.url}}">{{link.title}}</td>
+					  <td><a target="_blank" ng-href="{{link.url}}">{{link.title}}</td>
 				    </tr>						          
 				  </tbody>
 				</table>
@@ -107,7 +108,7 @@
         <div ng-show="selections[0]" class="col-md-6">
           <div ng-class="{'stacked': !selections[0]}" class="widget">
             <div class="widget-header">
-              <i class="glyphicon glyphicon-tasks"></i>
+              <span class="glyphicon glyphicon-tasks"></span>
               <h3>{{selections[0].name}}</h3>
             </div> <!-- /widget-header -->
             <div class="widget-content" ng-bind-html-unsafe="selections[0].config.info.text">

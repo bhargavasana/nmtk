@@ -29,27 +29,66 @@
  *       OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
  *       SUCH DAMAGE.
  */
-define(['text!jobActionsCellTemplate'
+define([  'text!jobActionsCellTemplate'
         , 'text!viewJobModalTemplate'
         , 'text!jobDescriptionCellTemplate'
-        , 'text!jobStatusCellTemplate'], function (jobActionsCellTemplate,
+        , 'text!jobStatusCellTemplate'
+        , 'text!JobStatusHistoryTemplate'
+        , 'text!deleteJobModalTemplate'], function (jobActionsCellTemplate,
         		viewJobModalTemplate, 
-        		jobDescriptionCellTemplate, jobStatusCellTemplate) {	
+        		jobDescriptionCellTemplate, jobStatusCellTemplate,
+        		JobStatusHistoryTemplate, DeleteJobModalTemplate) {	
 	"use strict";
-	var controller=['$scope','$routeParams','$modal','$position','$location','$log',
+	var controller=['$scope','$routeParams','$modal','$position','$location','$log','$q',
+	                'Restangular',
 		/*
 		 * This is the controller for Jobs - in particular viewing and controlling
 		 * a job.  Here we'll work with dialogs to create new jobs and then 
 		 * choose/set the parameters for them.
 		 */
 		
-		function ($scope, $routeParams, $modal, $position, $location, $log) {
+		function ($scope, $routeParams, $modal, $position, $location, $log, $q,
+				  Restangular) {
 			$scope.loginCheck();
 			$scope.enableRefresh(['job']);
 			$scope.refreshData('job');
 			//var jobid=$routeParams.jobid;
 			$log.info('In JobCtrl');
 			$scope.changeTab('viewjob');
+			
+			$scope.deleteJob=function (api, item, name, type, operation) {
+				if ((typeof(operation) === 'undefined') || (! operation) ) {
+					operation='Delete';
+				}
+				
+				var modal_dialog=$modal.open({
+					controller: 'DeleteJobCtrl',
+					resolve: {api: function () { return api; },
+						      id: function () { return item.id; },
+						      name: function () { return name; },
+						      operation: function () { return operation; },
+						      type: function () { return type; },
+						      jobdata: function () { return $scope.rest['job']}},
+					template: DeleteJobModalTemplate
+				});
+				modal_dialog.result.then(function(result) {
+					$scope.refreshData('job');
+					$scope.refreshData('datafile');
+				});
+			}
+			
+			$scope.viewJobStatusLog=function(job) {
+				$scope.view_job_opts = {
+					backdrop: true,
+					keyboard: true,
+					backdropClick: true,
+					scope: $scope,
+					template:  JobStatusHistoryTemplate,
+					controller: 'JobStatusHistoryCtrl',
+					resolve: { jobdata: function () { return job; } }
+				};
+				var d=$modal.open($scope.view_job_opts);
+			};
 			
 			$scope.openDialog=function(job) {
 				$scope.view_job_opts = {

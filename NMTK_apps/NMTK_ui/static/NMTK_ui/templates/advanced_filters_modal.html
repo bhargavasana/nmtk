@@ -8,13 +8,13 @@
       <form novalidate name="form">
 	      <div class="col-md-12">  	
 	        <div class="control-group">
-	          <label class="control-group" for="job">Advanced filters can be used to limit which data records are displayed based on various criteria.</label>
+	          <span class="control-group"><strong>Advanced filters can be used to limit which data records are displayed based on various criteria.</strong></span>
 	          <div class="controls" ng-show="filters.length">
 	          <p class="help-block">Current filter criteria</p>
 	             <div ng-grid="gridOptions" class="gridStyle"></div>
 	          </div>
 	          <div class="controls">
-     	        <p class="help-block">Choose a field to filter</p>
+     	        <p class="help-block"><label for="field">Choose a field to filter</label></p>
 	            <select id="field"
 	                    ng-model="selected.model_field" 
 	                    ng-options="field.model_field as field.name for field in selection_fields|orderBy: 'name'" >
@@ -24,22 +24,22 @@
 	            distinct {{attributes.type}} value(s). <br />
 	            <span ng-hide="attributes.values.length || attributes.type == 'text'">The range of values starts with {{attributes.min}} and
 	            ends with {{attributes.max}}</span>
-	            <span ng-show="attributes.values">
+	            <span ng-show="selected.model_field && attributes.values">
 	              <ul>
 	                <li ng-repeat="value in attributes.values">{{value}}</li>
 	              </ul>
 	            </span>
 	            <span></span>
 	            </p>
-	            <p ng-show="selected.model_field" class="help-block">Choose the filter criteria</p>
+	            <p ng-show="selected.model_field" class="help-block"><label for="criteria">Choose the filter criteria</label></p>
 	            <select ng-show="selected.model_field" id="criteria"
 	                    ng-model="selected.criteria" 
 	                    ng-options="criteria.filter as criteria.name for criteria in criterion" >
 	            </select>
-	            <p ng-show="selected.criteria" class="help-block">Enter the filter value</p>
+	            <p ng-show="selected.criteria" class="help-block"><label for="filter_value">Enter the filter value</label></p>
 	            <input ng-show="selected.criteria" id="filter_value"
 	                    ng-model="selected.filter_value">
-	            </select>
+	            
 	          </div>
 	        </div>
       	  </div>   

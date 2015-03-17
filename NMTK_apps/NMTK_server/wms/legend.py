@@ -17,6 +17,26 @@ class LegendGenerator(object):
     An NMTK Server class used to generate and manage legend objects.
     '''
     
+    
+    def round_to_n(self, x, n):
+        '''
+        Round a value to n significant digits
+        '''
+        flip=False
+        try:
+            if x < 0:
+                flip=True
+                x=x*-1
+            if x == 0:
+                return 0
+            v=round(x, -int(np.floor(np.log10(x))) + (n - 1))
+            if flip:
+                v=v*-1
+            return v
+        except Exception, e:
+            return x
+
+    
     def __init__(self, color_format, min_value=None, max_value=None, 
                  reverse=False, steps=255, values_list=None,
                  min_text=None, max_text=None, units=None,
@@ -39,33 +59,32 @@ class LegendGenerator(object):
         # text under the final legend graphic showing ranges (and units), that's
         # where the code below comes in handy.  In the values list case
         # we'll generate a vertical legend, where range values are irrelevant.
-        round_to_n = lambda x, n: round(x, -int(np.floor(np.log10(x))) + (n - 1))
         if min_value == 0:
             min_text='0'
         if max_value == 0:
             max_text='0'
         if max_text is None and max_value is not None:
             try:
-                max_text='{0}'.format(round_to_n(max_value, 4))
+                max_text='{0}'.format(self.round_to_n(max_value, 4))
             except:
                 max_text='{0}'.format(max_value)
         if min_text is None and min_value is not None:
             try:
-                min_text='{0}'.format(round_to_n(min_value, 4))
+                min_text='{0}'.format(self.round_to_n(min_value, 4))
             except:
                 min_text='{0}'.format(min_value)
         self.max_text=max_text
         self.min_text=min_text
         self.min_value=min_value
         self.max_value=max_value
-        if min_value and max_value:
+        self.numeric=(column_type not in ('text','date',))      
+        if self.numeric and min_value and max_value:
             # Increment the max value by a single step size
             # to ensure we cover all values in the range.
             ss=np.linspace(self.min_value, self.max_value, num=self.steps)[0]
 #             ss=(max_value-min_value)/steps
             self.max_value=max_value+ss
-        self.numeric=(column_type != 'text')      
-            
+        
         # Verify that the user has chosen to use one of the available color
         # ramp formats.  If they reverse it, then append an _r so that the code
         # knows to use the reverse of the ramp as appropriate.
@@ -88,8 +107,11 @@ class LegendGenerator(object):
         For a min/max range it should be noted that the final color (highest one) 
         will be uniquely styled with the highest/last color value.  
         '''
-        
-        if self.min_value is not None and self.max_value is not None and self.min_value != self.max_value:
+        logger.debug('Initializing iterator...')
+        if (self.numeric and 
+            self.min_value is not None and 
+            self.max_value is not None and 
+            self.min_value != self.max_value):
             # This is tricky, since we need to ensure that the last max value
             # we get is included in the list of values - otherwise
             # we end up not matching the last few features!
@@ -102,8 +124,10 @@ class LegendGenerator(object):
             self.value_iterator=izip(map(int, 
                                          np.linspace(0, self.steps, num=max(3,len(self.values_list)))), 
                                      self.values_list)
+            logger.debug('Used values list...')
         else:
             self.value_iterator=iter([])
+        logger.debug('Returning now that iterator is ready %s', self.value_iterator)
         return self
         
     
@@ -139,12 +163,14 @@ class LegendGenerator(object):
         '''
         # We use the value iterator to get the step and the min/max
         # values for the color.
-        
+        self._step_count=getattr(self, '_step_count',0)+1
+        logger.debug('Iterating on step %s', self._step_count)
         # if the include_umatched attribute is set to true, then
         # we'll return the unmatched colors last.  Note the type of this
         # data is "other" so we can discern it from other colors.
         try:
             step, value=self.value_iterator.next()
+            logger.debug('Got step and value %s %s', step, value)
         except StopIteration:
             if self.include_unmatched and self.unmatched():
                 self.include_unmatched=False
@@ -154,6 +180,7 @@ class LegendGenerator(object):
         try:
             colorset=self.cmap(step, bytes=True)
             colorset_nonbytes=self.cmap(step, bytes=False)
+            logger.debug('Color set is %s', colorset)
             color={'rgba': colorset[:4],
                    'rgb': colorset[:3],
                    'numeric': self.numeric,
@@ -164,11 +191,25 @@ class LegendGenerator(object):
             else:
                 key='max'
                 color['type']='ramp'
-            color[key]=value
+            if self.numeric:
+                logger.debug('Rounding %s for legend', value)
+                color['legend']=self.round_to_n(value, 4)
+            else:
+                if not isinstance(value, (str, unicode)):
+                    color['legend']=repr(value)
+                else:
+                    color['legend']=value
+            logger.debug('Setting value')
+            if not isinstance(value, (str, unicode)):
+                color[key]=repr(value)
+            else:
+                color[key]=value
+            logger.debug('Next iterated value is %s', color)
         except Exception, e:
             logger.exception('Failed to get value: %s, %s, %s',
-                             values, self.values_list, color)
+                             value, self.values_list, color)
             raise e
+        logger.debug('Returning color %s', color)
         return color
     
     @staticmethod
@@ -236,7 +277,10 @@ class LegendGenerator(object):
         images, as well as the legend generators, which need to generate
         an image.
         '''
+        logger.debug('Generating sample ramp')
         im=Image.new('RGBA', (257, height), "black")
+        logger.debug('Generating sample ramp1')
+
         draw=ImageDraw.Draw(im)
         start=border=1
         stop=height-border*2
@@ -247,6 +291,7 @@ class LegendGenerator(object):
         self.max_value=255
         try:
             for color in self:
+                logger.debug('Generating sample ramp: %s', color)
                 color="rgba({0},{1},{2},{3})".format(*color['rgba'])
                 draw.line((i, start, i, stop), fill=color)
                 i += 1
@@ -254,6 +299,7 @@ class LegendGenerator(object):
             self.min_value=self.old_min
             self.max_value=self.old_max
         draw=ImageDraw.Draw(im)
+        logger.debug('Generating sample ramp3')
         # if the request image size isn't the same as the ramp step
         # count, we'll resize to match - so we get an image that fills
         # the requested width.
@@ -289,10 +335,11 @@ class LegendGenerator(object):
         # The minimum separation allowable between two pieces of legend text
         legend_text_min_separation=5
         im=None
-
+        logger.debug('Got request to generate legend graphic')
         if ((self.min_text is not None and self.max_text is not None)
             and (self.max_value != self.min_value)):
             # Get the sample color ramp
+            logger.debug('Generating color ramp legend graphic')
             im=self.generateSampleRamp(component_height, width)
             
             # Start with the font size of 12, then keep reducing until the
@@ -368,9 +415,11 @@ class LegendGenerator(object):
         # or for a range of values.
         self.include_unmatched=True
         if not im or self.other_features_color:
+            logger.debug('Generating enumerated (or other feature color) graphic')
             # In this case there wasn't a ramp, or there was a ramp and 
             # other features existed, so we need to provide legend data for that
             for color in self:
+                logger.debug('Using color %s', color)
                 # we already have the ramp graphic, so there's no need to 
                 # include those colors (if there are any.)
                 if color['type'] in ('other','values'):
@@ -412,4 +461,5 @@ class LegendGenerator(object):
                         im=im2
                     else:
                         im=color_legend
+        logger.debug('Returning graphic')
         return im
